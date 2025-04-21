@@ -13,7 +13,7 @@ export default function OrderConfirmation() {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
-  const orderId = searchParams.get('orderId');
+  const [orderId, setOrderId] = useState<string | null>(searchParams.get('orderId'));
   const total = searchParams.get('total');
   const items = searchParams.get('items');
   const shippingAddress = searchParams.get('shippingAddress');
@@ -59,11 +59,34 @@ export default function OrderConfirmation() {
   console.log('Order Items:', orderItems);
   console.log('Shipping Address:', address);
 
+  useEffect(() => {
+    const fetchOrderId = async () => {
+      if (!session?.user?.id) return;
+  
+      try {
+        const res = await fetch(`/api/orders?userId=${session.user.id}`);
+        const data = await res.json();
+  
+        if (res.ok) {
+          console.log("ID de la orden:", data.id);
+          setOrderId(data.id);
+        } else {
+          console.error("Error:", data.message);
+        }
+      } catch (err) {
+        console.error("Error al obtener la orden:", err);
+      }
+    };
+  
+    fetchOrderId();
+  }, [session]);
+  
+
   return (
     <div className="container mx-auto py-12 px-4 max-w-6xl">
       <div className="flex flex-col items-center text-center mb-8">
         <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-        <h1 className="text-3xl font-bold mb-2">Confirmación N°{orderItems[0]?.id}</h1>
+        <h1 className="text-3xl font-bold mb-2">Confirmación N°{orderId || orderItems[0]?.id}</h1>
         <p className="text-xl">¡Gracias, {session?.user?.name}!</p>
       </div>
 

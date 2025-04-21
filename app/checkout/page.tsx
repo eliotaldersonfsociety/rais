@@ -11,7 +11,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, HelpCircle, Info, Minus, Plus, X } from "lucide-react";
+import { ChevronDown, HelpCircle, Info } from "lucide-react";
+import md5 from "md5";
+
+interface FormData {
+  merchantId: string;
+  accountId: string;
+  description: string;
+  referenceCode: string;
+  amount: string;
+  tax: string;
+  taxReturnBase: string;
+  currency: string;
+  buyerEmail: string;
+  responseUrl: string;
+  confirmationUrl: string;
+  shippingAddress?: string;
+  shippingCity?: string;
+  shippingCountry?: string;
+}
 
 export default function CheckoutPage() {
   const { cartItems } = useCart();
@@ -69,6 +87,11 @@ export default function CheckoutPage() {
   }, [session]);
 
   const handlePago = async () => {
+    if (paymentMethod === "payu") {
+      handlePayUPayment();
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -105,36 +128,100 @@ export default function CheckoutPage() {
 
       const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || "Error al procesar el pago.");
+      if (!response.ok) {
+        throw new Error(data.message || "Error al procesar el pago.");
+      }
+
+      // Actualiza el saldo del usuario
+      setUserSaldo(data.newSaldo);
+
+      // Define itemsParam and addressParam
+      const itemsParam = encodeURIComponent(JSON.stringify(carrito));
+      const addressParam = encodeURIComponent(JSON.stringify({
+        firstname: (document.getElementById('firstname') as HTMLInputElement)?.value || '',
+        lastname: (document.getElementById('lastname') as HTMLInputElement)?.value || '',
+        address: (document.getElementById('address') as HTMLInputElement)?.value || '',
+        apartment: (document.getElementById('apartment') as HTMLInputElement)?.value || '',
+        city: (document.getElementById('city') as HTMLInputElement)?.value || '',
+        province: (document.getElementById('province') as HTMLSelectElement)?.value || '',
+        postal: (document.getElementById('postal') as HTMLInputElement)?.value || '',
+        phone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
+      }));
+
+      alert("¡Pago procesado con éxito!");
+      // Redirige al usuario a la página de agradecimiento
+      router.push(`/thankyou?orderId=123&total=${grandTotal}&items=${itemsParam}&shippingAddress=${addressParam}&tax=${tax}&tip=${tip}`);
+    } catch (error) {
+      console.error("Error en el pago:", error);
+      alert("Hubo un error al procesar tu pago.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePayUPayment = () => {
+    const productDescriptions = cartItems.map(item => `${item.quantity}x ${item.name}`).join(", ");
+    const description = `Compra de: ${productDescriptions}`;
+    const tipDescription = tip > 0 ? ` (incluye propina de ${tip.toFixed(2)} COP)` : '';
+
+    const formData: FormData = {
+      merchantId: "508029", // Reemplaza con tu merchantId de prueba
+      accountId: "512321", // Reemplaza con tu accountId de prueba
+      description: description + tipDescription,
+      referenceCode: `TestPayU_${new Date().getTime()}`,
+      amount: grandTotal.toFixed(2),
+      tax: tax.toFixed(2),
+      taxReturnBase: (totalPrice - tax).toFixed(2),
+      currency: 'COP',
+      buyerEmail: (document.getElementById('email') as HTMLInputElement)?.value || session?.user?.email || 'test@test.com',
+      responseUrl: 'http://www.test.com/response',
+      confirmationUrl: 'http://www.test.com/confirmation',
+      shippingAddress: (document.getElementById('address') as HTMLInputElement)?.value || '',
+      shippingCity: (document.getElementById('city') as HTMLInputElement)?.value || '',
+      shippingCountry: 'CO',
+    };
+
+    const signature = generateSignature(formData);
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = 'https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/'; // URL correcta para el entorno de pruebas
+
+    for (const key in formData) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = (formData as any)[key];
+      form.appendChild(input);
     }
 
-    // Actualiza el saldo del usuario
-    setUserSaldo(data.newSaldo);
+    const signatureInput = document.createElement('input');
+    signatureInput.type = 'hidden';
+    signatureInput.name = 'signature';
+    signatureInput.value = signature;
+    form.appendChild(signatureInput);
 
-    // Define itemsParam and addressParam
-    const itemsParam = encodeURIComponent(JSON.stringify(carrito));
-    const addressParam = encodeURIComponent(JSON.stringify({
-      firstname: (document.getElementById('firstname') as HTMLInputElement)?.value || '',
-      lastname: (document.getElementById('lastname') as HTMLInputElement)?.value || '',
-      address: (document.getElementById('address') as HTMLInputElement)?.value || '',
-      apartment: (document.getElementById('apartment') as HTMLInputElement)?.value || '',
-      city: (document.getElementById('city') as HTMLInputElement)?.value || '',
-      province: (document.getElementById('province') as HTMLSelectElement)?.value || '',
-      postal: (document.getElementById('postal') as HTMLInputElement)?.value || '',
-      phone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
-    }));
+    const testInput = document.createElement('input');
+    testInput.type = 'hidden';
+    testInput.name = 'test';
+    testInput.value = '1'; // Valor correcto para el entorno de pruebas
+    form.appendChild(testInput);
 
-    alert("¡Pago procesado con éxito!");
-    // Redirige al usuario a la página de agradecimiento
-    router.push(`/thankyou?orderId=123&total=${grandTotal}&items=${itemsParam}&shippingAddress=${addressParam}&tax=${tax}&tip=${tip}`);
-  } catch (error) {
-    console.error("Error en el pago:", error);
-    alert("Hubo un error al procesar tu pago.");
-  } finally {
-    setLoading(false);
-  }
-};
+    document.body.appendChild(form);
+    form.submit();
+
+    // Redirigir a /thankyou después de que el formulario se envíe correctamente
+    form.addEventListener('submit', () => {
+      setTimeout(() => {
+        router.push('/thankyou');
+      }, 1000); // Espera 1 segundo antes de redirigir
+    });
+  };
+
+  const generateSignature = (data: FormData): string => {
+    const apiKey = "4Vj8eK4rloUd272L48hsrarnUA"; // Reemplaza con tu ApiKey de prueba
+    const signatureString = `${apiKey}~${data.merchantId}~${data.referenceCode}~${data.amount}~${data.currency}`;
+    return md5(signatureString);
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -338,11 +425,11 @@ export default function CheckoutPage() {
                 <RadioGroupItem id="payu" value="payu" />
                 <Label htmlFor="payu">A través de PayU: Tarjetas de crédito y más</Label>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-8 h-5 bg-blue-600 rounded"></div>
-                <div className="w-8 h-5 bg-red-600 rounded"></div>
-                <div className="w-8 h-5 bg-blue-400 rounded"></div>
-                <div className="w-8 h-5 bg-blue-800 rounded"></div>
+              <div className="flex items-center">
+                <div><svg width="30" height="18" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="32" rx="4" fill="#1A1F71"/><text x="4" y="22" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="18">VISA</text></svg></div>
+                <div><svg width="30" height="18" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="32" rx="4" fill="#ffffff"/><circle cx="18" cy="16" r="10" fill="#EB001B"/><circle cx="30" cy="16" r="10" fill="#F79E1B"/><path d="M24 6a10 10 0 0 1 0 20a10 10 0 0 1 0-20" fill="#FF5F00"/></svg></div>
+                <div><svg width="30" height="18" viewBox="0 0 48 32" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="32" rx="4" fill="#ffffff"/><g transform="translate(12,10)"><rect x="0" y="2" width="6" height="6" fill="#FF0080" /><text x="8" y="8" font-family="Arial, sans-serif" font-size="12" fill="#000000">NEQUI</text></g></svg></div>
+
                 <span className="text-xs text-gray-500">+13</span>
               </div>
             </div>

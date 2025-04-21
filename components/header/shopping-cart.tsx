@@ -47,6 +47,7 @@ export default function ShoppingCart({
 
       <SheetContent className="backdrop-blur-lg bg-background/80 p-6">
         <SheetHeader>
+        <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
           <Image
             src="/tsn.png"
             alt="Carrito"
