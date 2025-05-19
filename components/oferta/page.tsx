@@ -24,19 +24,46 @@ export default function Ofert() {
   const [loading, setLoading] = useState<boolean>(true);
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [itemsToShow, setItemsToShow] = useState(2);
 
   // Fetch de productos desde el endpoint /api/products/
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
+      let loadedProducts: Product[] = [];
+
+      // 1. Intentar cargar desde localStorage
+      let cachedProducts = localStorage.getItem("cached_products");
+      if (!cachedProducts) {
+        cachedProducts = localStorage.getItem("products");
+      }
+      if (cachedProducts) {
+        try {
+          const parsed = JSON.parse(cachedProducts);
+          const productsArray = Array.isArray(parsed) ? parsed : parsed.products;
+          if (productsArray && productsArray.length > 0) {
+            loadedProducts = productsArray;
+            setProducts(loadedProducts);
+            setLoading(false);
+            console.log("✅ Productos cargados desde localStorage:", loadedProducts);
+            return;
+          }
+        } catch (e) {
+          console.error("❌ Error al parsear productos de localStorage:", e);
+        }
+      }
+
+      // 2. Si no hay productos en localStorage, cargar desde la API
       try {
-        setLoading(true);
         const res = await fetch("/api/products/");
         if (!res.ok) {
           console.error("Error fetching products:", res.statusText);
+          setLoading(false);
           return;
         }
         const data = await res.json();
         setProducts(data);
+        console.log("🌐 Productos cargados desde la API:", data);
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -83,134 +110,116 @@ export default function Ofert() {
     return () => clearInterval(interval);
   }, [products]);
 
+  useEffect(() => {
+    const updateItemsToShow = () => {
+      setItemsToShow(window.innerWidth < 768 ? 2 : 3);
+    };
+    updateItemsToShow();
+    window.addEventListener("resize", updateItemsToShow);
+    return () => window.removeEventListener("resize", updateItemsToShow);
+  }, []);
+
   return (
+    <div className="bg-gray-100 w-full py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => scroll("left")}
-              disabled={currentProductIndex === 0}
-              className="hidden md:flex"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => scroll("right")}
-              disabled={currentProductIndex >= products.length - 1}
-              className="hidden md:flex"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        <div className="relative w-full max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Ofertas del Día</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentProductIndex((prev) => Math.max(0, prev - 1))}
+                disabled={currentProductIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentProductIndex((prev) => Math.min(products.length - 1, prev + 1))}
+                disabled={currentProductIndex >= products.length - 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          {loading ? (
+            <p className="text-center text-lg font-semibold">Cargando productos...</p>
+          ) : (
+            <div className="flex justify-center items-center">
+              <div className="flex gap-2 overflow-x-auto snap-x scrollbar-hide">
+                {products
+                  .slice(currentProductIndex, currentProductIndex + itemsToShow)
+                  .map((product) => {
+                    const discount =
+                      product.sale_price && product.compareAtPrice && parseFloat(product.compareAtPrice) > 0
+                        ? Math.round(
+                            ((parseFloat(product.compareAtPrice) - parseFloat(product.sale_price)) /
+                              parseFloat(product.compareAtPrice)) *
+                              100
+                          )
+                        : 0;
+                    return (
+                      <div
+                        key={product.id}
+                        className="min-w-[140px] max-w-[160px] mx-2 bg-white rounded-lg shadow-md border border-gray-200 flex flex-col snap-center hover:shadow-lg transition-shadow duration-300"
+                      >
+                        <div className="relative h-24 w-full bg-gray-100">
+                          {product.images && product.images.length > 0 ? (
+                            <Image
+                              loader={customLoader}
+                              src={product.images[0] || "/placeholder.svg"}
+                              alt={product.title}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400">
+                              No disponible
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2">
+                            {discount > 0 && (
+                              <span className="px-2 py-1 text-xs font-semibold rounded bg-red-500 text-white">
+                                -{discount}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="p-2 flex-1 flex flex-col">
+                          <h2 className="font-semibold text-sm mb-1 line-clamp-1">{product.title}</h2>
+                          <p className="text-gray-500 text-xs mb-2 line-clamp-2">{product.description || ""}</p>
+                          <div className="mt-auto flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-sm">${product.sale_price || product.price}</p>
+                            </div>
+                            <Link href={`/product/${product.id}`}>
+                              <button className="bg-blue-500 hover:bg-blue-600 transition-colors text-white px-2 py-1 rounded text-xs">
+                                Ver
+                              </button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+          {/* Indicadores de scroll */}
+          <div className="flex justify-center gap-1 mt-2">
+            {products.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === currentProductIndex ? "w-6 bg-blue-500" : "w-1.5 bg-gray-300"
+                }`}
+              />
+            ))}
           </div>
         </div>
-        {loading ? (
-          <p className="text-center text-lg font-semibold">
-            Cargando productos...
-          </p>
-        ) : (
-          <div className="relative">
-            <div
-              ref={scrollContainerRef}
-              className="flex gap-4 overflow-x-auto pb-6 snap-x scrollbar-hide"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              {/* Tarjeta fija de "Ofertas del Día" */}
-              <div className="min-w-[200px] max-w-[200px] h-[400px] bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 flex flex-col justify-center items-center snap-start">
-                <div className="p-6 text-center">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                    Ofertas del Día
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Descubre nuestras mejores promociones con descuentos
-                    increíbles
-                  </p>
-                  <Link href="/pages/categorias/promociones">
-                    <button className="bg-blue-500 hover:bg-blue-600 transition-colors text-white px-3 py-1.5 rounded text-sm">
-                      Hasta 40% OFF
-                    </button>
-                  </Link>
-                </div>
-              </div>
-              {/* Tarjetas de productos */}
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="min-w-[200px] max-w-[200px] bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 flex flex-col snap-start hover:shadow-lg transition-shadow duration-300"
-                >
-                  <div className="relative h-48 w-full bg-gray-100">
-                    {product.images && product.images.length > 0 ? (
-                      <Image
-                        loader={customLoader}
-                        src={product.images[0] || "/placeholder.svg"}
-                        alt={product.title}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        No disponible
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold rounded ${
-                          parseFloat(product.sale_price)
-                            ? "bg-red-500 text-white"
-                            : "bg-gray-500 text-white"
-                        }`}
-                      >
-                        -{product.sale_price
-                          ? Math.round(
-                              ((parseFloat(product.compareAtPrice) -
-                                parseFloat(product.sale_price)) /
-                                parseFloat(product.compareAtPrice)) *
-                                100
-                            )
-                          : 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-4 flex-1 flex flex-col">
-                    <h2 className="font-semibold text-lg mb-1 line-clamp-1">
-                      {product.title}
-                    </h2>
-                    <p className="text-gray-500 text-sm mb-2 line-clamp-2">
-                      {product.description || ""}
-                    </p>
-                    <div className="mt-auto flex justify-between items-center">
-                      <div>
-                        <p className="font-bold text-lg">
-                          ${product.sale_price || product.price}
-                        </p>
-                      </div>
-                      <Link href={`/product/${product.id}`}>
-                        <button className="bg-blue-500 hover:bg-blue-600 transition-colors text-white px-3 py-1.5 rounded text-sm">
-                          Ver Producto
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Indicadores de scroll en versión móvil */}
-            <div className="flex justify-center gap-1 mt-4 md:hidden">
-              {products.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === currentProductIndex ? "w-6 bg-blue-500" : "w-1.5 bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+    </div>
   );
 }

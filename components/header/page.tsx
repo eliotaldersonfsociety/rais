@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MenuIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 import SearchBar from "@/components/header/search-bar";
 import UserMenu from "@/components/header/user-menu";
@@ -12,28 +13,20 @@ import ShoppingCart from "@/components/header/shopping-cart";
 import NavigationMenu from "@/components/header/navigation-menu";
 import HotProductsBanner from "@/components/header/hot-products-banner";
 import OffersBanner from "@/components/header/offers-banner";
-import { useCart } from "@/context/CartContext";
-
-export type CartItem = {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-  color?: string | null;
-  size?: string | null;
-  sizeRange?: number | null;
-};
+import { useCart } from "@/context/CartContext"; // 👈 tienes que importarlo
+import CountdownTimer from "@/components/countdown-timer";
 
 export default function Header() {
-  const { cartItems, addToCart, removeFromCart } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: session } = useSession();
+  const { isSignedIn, user } = useUser();
+  const { cartItems, addToCart, removeFromCart } = useCart(); // 👈 necesitas destructurarlo
+  const pathname = usePathname();
+  const isProductPage = /^\/product\/[^/]+$/.test(pathname);
 
-  const isLoggedIn = !!session;
+  const isLoggedIn = !!isSignedIn;
 
   return (
-    <header className="border-b sticky top-0 bg-background z-50">
+    <header className="border-b sticky top-0 bg-background z-50" id="site-header">
       <HotProductsBanner />
 
       <div className="container mx-auto px-4">
@@ -61,11 +54,7 @@ export default function Header() {
 
           <div className="flex items-center space-x-4">
             <UserMenu />
-            <ShoppingCart
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-            />
+            <ShoppingCart />
           </div>
         </div>
 
@@ -80,6 +69,7 @@ export default function Header() {
       </div>
 
       <OffersBanner />
+      {isProductPage && <CountdownTimer />}
     </header>
   );
 }

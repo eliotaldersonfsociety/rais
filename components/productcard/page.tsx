@@ -88,7 +88,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </Button>
         </Link>
         
-        <Link href={`/list/${product.id}/edit`} className="flex-1">
+        <Link href={`/panel/productos/${product.id}/edit`} className="flex-1">
           <Button className="w-full" size="sm">
             <Pencil className="h-4 w-4 mr-2" />
             Editar

@@ -12,6 +12,7 @@ export const registerBaseSchema = z.object({
   postal_code: z.string().min(1),
   phone: z.string().min(1),
   password: z.string().min(6),
+  country: z.string().min(1),
 });
 
 // Para el frontend: incluye confirmación
@@ -25,4 +26,6 @@ export const registerSchema = registerBaseSchema
   });
 
 // Para el backend: sin confirmación
-export const registerSchemaForBackend = registerBaseSchema;
+export const registerSchemaForBackend = registerBaseSchema.extend({
+  recaptchaToken: z.string().min(1, "El token de reCAPTCHA es requerido"),
+});

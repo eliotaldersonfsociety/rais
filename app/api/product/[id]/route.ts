@@ -1,16 +1,8 @@
 //app/api/product/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
 import { eq } from "drizzle-orm";
-import { products } from "../../../schema/schema";
-
-const db = drizzle(
-  createClient({
-    url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!,
-  })
-);
+import db from '@/lib/db';
+import { products } from '@/lib/products/schema';
 
 export async function GET(request: NextRequest) {
   const urlParts = request.nextUrl.pathname.split("/");
@@ -23,7 +15,7 @@ export async function GET(request: NextRequest) {
       const numericId = parseInt(id, 10);
       console.log("✅ ID convertido a número:", numericId);
 
-      const product = await db
+      const product = await db.products
         .select()
         .from(products)
         .where(eq(products.id, numericId))
@@ -36,11 +28,54 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
       }
 
+      let images: string[] = [];
+      if (Array.isArray(product[0].images)) {
+        images = product[0].images;
+      } else if (typeof product[0].images === "string") {
+        try {
+          let parsed = JSON.parse(product[0].images);
+          if (typeof parsed === "string") {
+            parsed = JSON.parse(parsed);
+          }
+          images = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          images = [];
+        }
+      }
+
+      const rawSizes = product[0].sizes;
+      let sizes: string[] = [];
+
+      if (Array.isArray(rawSizes)) {
+        sizes = rawSizes;
+      } else if (typeof rawSizes === "string") {
+        try {
+          sizes = JSON.parse(rawSizes);
+          if (!Array.isArray(sizes)) sizes = [];
+        } catch {
+          sizes = [];
+        }
+      }
+
+      const rawColors = product[0].colors;
+      let colors: string[] = [];
+
+      if (Array.isArray(rawColors)) {
+        colors = rawColors;
+      } else if (typeof rawColors === "string") {
+        try {
+          colors = JSON.parse(rawColors);
+          if (!Array.isArray(colors)) colors = [];
+        } catch {
+          colors = [];
+        }
+      }
+
       const formattedProduct = {
         ...product[0],
-        images: Array.isArray(product[0].images)
-          ? product[0].images
-          : JSON.parse(product[0].images || "[]"),
+        images,
+        sizes,
+        colors,
       };
 
       return NextResponse.json(formattedProduct);
@@ -73,7 +108,7 @@ export async function PUT(request: NextRequest) {
         images: Array.isArray(body.images) ? JSON.stringify(body.images) : "[]",
       };
 
-      const result = await db
+      const result = await db.products
         .update(products)
         .set(updatedData)
         .where(eq(products.id, numericId));
@@ -106,7 +141,7 @@ export async function DELETE(request: NextRequest) {
       const productId = parseInt(id, 10);
       console.log("✅ ID convertido a número:", productId);
 
-      const [product] = await db
+      const [product] = await db.products
         .select()
         .from(products)
         .where(eq(products.id, productId))
@@ -119,7 +154,7 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
       }
 
-      await db.delete(products).where(eq(products.id, productId));
+      await db.products.delete(products).where(eq(products.id, productId));
 
       console.log("🧹 Producto eliminado exitosamente");
 
