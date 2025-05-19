@@ -8,7 +8,7 @@ import * as visitasSchema from '@/lib/visitas/schema';
 import * as orders from '@/lib/payu/schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
-import { products } from "@/lib/products/schema";
+import { productsTable } from "@/lib/products/schema";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { users } from "@/lib/usuarios/schema";
