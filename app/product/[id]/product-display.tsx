@@ -16,7 +16,7 @@ import { useWishlist } from "@/context/WishlistContext"; // Asegúrate que la ru
 import { toast } from "react-toastify";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import CommentsPage from "@/app/comentarios/page";
+import CommentsPage from "@/components/comentarios";
 import { Card, CardContent } from "@/components/ui/card";
 import CountdownTimer from "@/components/countdown-timer";
 import FAQ from "@/app/preguntas/page";
