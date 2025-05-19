@@ -20,7 +20,7 @@ export function AppSidebar() {
 
   const routes = [
     { name: "Inicio", href: "/panel", icon: Home },
-    { name: "Perfil", href: "/panel/profile", icon: User },
+    { name: "Perfil", href: "", icon: User },
     { name: "Compras", href: "/panel/purchases", icon: ShoppingBasket },
     {
       name: "Productos",
@@ -35,6 +35,13 @@ export function AppSidebar() {
   ]
 
   const isActive = (path: string) => pathname === path
+
+  const handleOpenClerkProfile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (window.Clerk) {
+      window.Clerk.openUserProfile();
+    }
+  };
 
   return (
     <div className="bg-black text-white border-b">
@@ -73,50 +80,22 @@ export function AppSidebar() {
                 />
               </Link>
               <div className="flex items-center gap-2">
-                {routes.map((route) =>
-                  route.children ? (
-                    <DropdownMenu key={route.name}>
-                      <DropdownMenuTrigger asChild>
-                      <button
-                        className={cn(
-                            "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-orange-900"
-                        )}
-                      >
-                        <route.icon className="h-5 w-5" />
-                        {route.name}
-                      </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                          {route.children.map((child) => (
-                          <DropdownMenuItem asChild key={child.href}>
-                            <Link
-                              href={child.href}
-                              className={cn(
-                                "flex items-center gap-2 w-full",
-                                pathname === child.href ? "bg-white text-orange-800" : ""
-                              )}
-                            >
-                              <child.icon className="h-5 w-5" />
-                              {child.name}
-                            </Link>
-                          </DropdownMenuItem>
-                          ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
+                {routes
+                  .filter(route => route.href)
+                  .map((route) => (
                     <Link
                       key={route.href}
-                      href={route.href}
+                      href={route.href!}
+                      onClick={route.name === "Perfil" ? handleOpenClerkProfile : undefined}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                        pathname === route.href ? "bg-white text-orange-800" : "hover:bg-orange-700"
+                        isActive(route.href!) ? "bg-white text-orange-800" : "hover:bg-orange-700"
                       )}
                     >
                       <route.icon className="h-5 w-5" />
                       {route.name}
                     </Link>
-                  )
-                )}
+                  ))}
               </div>
             </div>
             <Link
