@@ -4,30 +4,7 @@ import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import db from "@/lib/db/index";
-import { products } from "@/lib/products/schema";
-
-// Definición de la tabla de productos
-export const productsTable = sqliteTable("products", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title").notNull(),
-  description: text("description"),
-  price: real("price").notNull(),
-  compareAtPrice: real("compare_at_price"),
-  costPerItem: real("cost_per_item"),
-  vendor: text("vendor"),
-  productType: text("product_type"),
-  status: integer("status").notNull().default(1), // Cambiado a integer
-  category: text("category"),
-  tags: text("tags"),
-  sku: text("sku"),
-  barcode: text("barcode"),
-  quantity: integer("quantity").notNull().default(0),
-  trackInventory: integer("track_inventory").default(0), // Cambiado a integer
-  images: text("images", { mode: "json" }).notNull().$type<string[]>(),
-  sizes: text("sizes", { mode: "json" }).$type<string[] | null>(),
-  sizeRange: text("size_range", { mode: "json" }).$type<{ min: number; max: number } | null>(),
-  colors: text("colors", { mode: "json" }).$type<string[] | null>(),
-});
+import { productsTable } from "@/lib/products/schema";
 
 // Esquemas Zod para validación
 const insertProductSchema = createInsertSchema(productsTable).extend({
