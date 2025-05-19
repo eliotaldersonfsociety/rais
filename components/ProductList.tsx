@@ -38,7 +38,23 @@ export default function ProductList() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard
+          key={product.id}
+          product={{
+            ...product,
+            description: product.description ?? undefined,
+            compareAtPrice: product.compareAtPrice ?? undefined,
+            costPerItem: product.costPerItem ?? undefined,
+            vendor: product.vendor ?? undefined,
+            productType: product.productType ?? undefined,
+            category: product.category ?? undefined,
+            tags: Array.isArray(product.tags) ? product.tags.join(",") : product.tags ?? undefined,
+            sku: product.sku ?? undefined,
+            barcode: product.barcode ?? undefined,
+            status: typeof product.status === "number" ? product.status === 1 : product.status ?? undefined,
+            trackInventory: typeof product.trackInventory === "number" ? product.trackInventory === 1 : product.trackInventory ?? undefined,
+          }}
+        />
       ))}
     </div>
   );
