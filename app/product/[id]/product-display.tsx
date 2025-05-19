@@ -134,15 +134,9 @@ export default function ProductDisplay({ product }: { product: Product }) {
     }
     setIsWishlistLoading(true);
     try {
-      console.log('Enviando a addToWishlist:', { id: product.id, product });
-      const data = await addToWishlist(product.id, product);
-      if (data && typeof data === 'object' && 'message' in data) {
-        if (data.message === "Product removed from wishlist") {
-          toast.info("Producto eliminado de favoritos");
-        } else if (data.message === "Item added to wishlist") {
-          toast.success("Producto añadido a favoritos");
-        }
-      }
+      await addToWishlist(product.id, product);
+      // Puedes mostrar un toast genérico aquí si quieres
+      toast.success("Favoritos actualizado");
     } finally {
       setIsWishlistLoading(false);
     }
