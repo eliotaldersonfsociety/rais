@@ -43,13 +43,13 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose }: PurchaseDeta
   const purchasesPerPage = 5;
 
   // Guardar en localStorage con timestamp
-  function saveToLocalStorage(key, data) {
+  function saveToLocalStorage(key: string, data: any) {
     const timestamp = Date.now();
     localStorage.setItem(key, JSON.stringify({ data, timestamp }));
   }
 
   // Leer de localStorage y validar expiración (ej: 1 minuto)
-  function getFromLocalStorage(key, maxAgeMs = 60 * 1000) {
+  function getFromLocalStorage(key: string, maxAgeMs: number = 60 * 1000) {
     const item = localStorage.getItem(key);
     if (!item) return null;
     try {
