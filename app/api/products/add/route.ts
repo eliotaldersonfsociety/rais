@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         : status;
 
     // Insertar en la base de datos
-    const result = await db.products
+    const result = await db
       .insert(productsTable)
       .values({
         ...data,
