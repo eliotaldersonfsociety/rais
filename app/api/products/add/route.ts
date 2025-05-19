@@ -74,6 +74,10 @@ export async function POST(req: NextRequest) {
       .insert(productsTable)
       .values({
         ...data,
+        images: JSON.stringify(data.images ?? []),        // si `images` es un string[], serialízalo
+        sizes: JSON.stringify(data.sizes ?? []),
+        colors: JSON.stringify(data.colors ?? []),
+        size_range: JSON.stringify(data.sizeRange ?? {}),
         status: numericStatus,
       })
       .returning();
