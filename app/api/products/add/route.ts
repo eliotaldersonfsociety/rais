@@ -11,13 +11,12 @@ const insertProductSchema = createInsertSchema(productsTable).extend({
   sizes: z.array(z.string()).nullable(),
   sizeRange: z.object({ min: z.number(), max: z.number() }).nullable(),
   colors: z.array(z.string()).nullable(),
+  status: z.union([z.string(), z.number()]).optional().default("draft"),
 });
 const selectProductSchema = createSelectSchema(productsTable);
 
-// Tipo TypeScript basado en Zod
 type Product = z.infer<typeof selectProductSchema>;
 
-// Mapeo de estados
 const statusMap = {
   active: 1,
   draft: 0,
@@ -61,15 +60,14 @@ export async function POST(req: NextRequest) {
     const data = parseResult.data;
 
     // Convertir status a número
-    let status: string | number = "draft";
-    if (typeof data.status === "string" && data.status) {
-      status = data.status.toLowerCase();
-    } else if (typeof data.status === "number") {
-      status = data.status;
+    let status: string | number = data.status ?? "draft";
+    if (typeof status === "string") {
+      status = status.toLowerCase();
     }
-    const numericStatus = typeof status === "string"
-      ? (status in statusMap ? statusMap[status as StatusKey] : statusMap.draft)
-      : status;
+    const numericStatus =
+      typeof status === "string"
+        ? statusMap[status as StatusKey] ?? statusMap.draft
+        : status;
 
     // Insertar en la base de datos
     const result = await db.products
