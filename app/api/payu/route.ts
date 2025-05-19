@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Import your Drizzle client setup
 import db3 from "@/lib/db/db3"; // Adjust the path if your db3.ts is elsewhere
 // Import your Drizzle schema for the orders table
-import { orders } from "@/lib/payu/fsd/"; // Adjust the path if your schema.ts is elsewhere
+
 import { getAuth } from '@clerk/nextjs/server';
 
 export async function POST(req: NextRequest) {
