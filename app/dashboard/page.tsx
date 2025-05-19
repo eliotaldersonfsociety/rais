@@ -178,23 +178,6 @@ export default function DashboardPage() {
 
   const comprasPendientes = JSON.parse(localStorage.getItem('compras_pendientes') || '[]');
 
-  const handleInternalBalancePayment = async () => {
-    setLoading(true);
-    try {
-      // ... tu lógica de pago ...
-
-      // Guardar datos en localStorage, etc.
-
-      const orderId = data.orderId;
-      router.push(`/thankyou?orderId=${orderId}`);
-      return; // <-- IMPORTANTE: Detiene la ejecución aquí, el loading sigue en true
-    } catch (error: any) {
-      console.error("Error en el pago con saldo:", error);
-      toast.error(error.message || "Hubo un error al procesar tu pago");
-      setLoading(false); // Solo aquí se vuelve a habilitar el botón si hay error
-    }
-  };
-
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 p-4 md:p-8">
