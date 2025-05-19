@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import db from '@/lib/db';
-import { products } from '@/lib/products/schema';
+import { productsTable } from '@/lib/products/schema';
 
 export async function GET(request: NextRequest) {
   const urlParts = request.nextUrl.pathname.split("/");
@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
 
       const product = await db.products
         .select()
-        .from(products)
-        .where(eq(products.id, numericId))
+        .from(productsTable)
+        .where(eq(productsTable.id, numericId))
         .limit(1);
 
       console.log("📦 Producto obtenido de la base de datos:", product);
@@ -109,9 +109,9 @@ export async function PUT(request: NextRequest) {
       };
 
       const result = await db.products
-        .update(products)
+        .update(productsTable)
         .set(updatedData)
-        .where(eq(products.id, numericId));
+        .where(eq(productsTable.id, numericId));
 
       console.log("✅ Producto actualizado:", result);
 
@@ -143,8 +143,8 @@ export async function DELETE(request: NextRequest) {
 
       const [product] = await db.products
         .select()
-        .from(products)
-        .where(eq(products.id, productId))
+        .from(productsTable)
+        .where(eq(productsTable.id, productId))
         .limit(1);
 
       console.log("🔍 Producto encontrado antes de eliminar:", product);
@@ -154,7 +154,7 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
       }
 
-      await db.products.delete(products).where(eq(products.id, productId));
+      await db.products.delete(productsTable).where(eq(productsTable.id, productId));
 
       console.log("🧹 Producto eliminado exitosamente");
 
