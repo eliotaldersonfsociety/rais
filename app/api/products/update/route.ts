@@ -63,20 +63,27 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
 
     // Validación con Zod (parcial, permite updates parciales)
-    const partialProductSchema = insertProductSchema.partial();
+    const partialProductSchema = insertProductSchema.partial().extend({
+      status: z.union([z.string(), z.number()]).optional()
+    });
+
     const parseResult = partialProductSchema.safeParse(body);
     if (!parseResult.success) {
       return NextResponse.json({ error: 'Datos inválidos en el update', detalles: parseResult.error.errors }, { status: 400 });
     }
+
     const data = parseResult.data;
 
     // Convertir status a número si viene
     let status: string | number | undefined = undefined;
-    if (typeof data.status === "string" && data.status) {
-      status = data.status.toLowerCase();
-    } else if (typeof data.status === "number") {
-      status = data.status;
+    const statusRaw = data.status as string | number | undefined;
+
+    if (typeof statusRaw === "string") {
+      status = statusRaw.toLowerCase();
+    } else if (typeof statusRaw === "number") {
+      status = statusRaw;
     }
+
     const numericStatus = typeof status === "string"
       ? (status in statusMap ? statusMap[status as StatusKey] : undefined)
       : status;
