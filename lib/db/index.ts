@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { productsTable } from "@/lib/products/schema";
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { users } from "@/lib/usuarios/schema";
 
 
