@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
       const usuarioActual = userResult[0];
 
       for (const field of envioFields) {
-        // Si el campo en la base de datos está vacío/nulo/"" y viene en el body, lo actualizamos
+        const key = field as keyof typeof usuarioActual;
         if (
-          (usuarioActual[field] === undefined || usuarioActual[field] === null || usuarioActual[field] === "") &&
+          (usuarioActual[key] === undefined || usuarioActual[key] === null || usuarioActual[key] === "") &&
           body[field] !== undefined && body[field] !== null && body[field] !== ""
         ) {
           envioUpdate[field] = body[field];
