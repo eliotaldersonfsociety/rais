@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const result = await db.transactions.insert(orders).values({
       referenceCode,
       clerk_id: userId || null,
-      TX_VALUE,
+      TX_VALUE: Number(TX_VALUE),
       currency,
       buyerEmail,
       authorizationCode,
