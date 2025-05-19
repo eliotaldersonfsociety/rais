@@ -4,7 +4,7 @@ import { Star } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-export default function CommentsPage({ averageRating }: { averageRating: number }) {
+export default function CommentsPage() {
   // Array de 100 comentarios aleatorios
   const randomComments = [
     {
@@ -952,6 +952,9 @@ export default function CommentsPage({ averageRating }: { averageRating: number 
     const shuffled = array.slice().sort(() => 0.5 - Math.random());
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
+
+  const averageRating =
+    randomComments.reduce((sum, c) => sum + c.rating, 0) / randomComments.length;
 
   return (
     <div className="w-full py-4 px-2 md:px-4">
