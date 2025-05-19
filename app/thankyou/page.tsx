@@ -471,3 +471,5 @@ export default function OrderConfirmation() {
     </div>
   );
 }
+
+export const dynamic = "force-dynamic";
