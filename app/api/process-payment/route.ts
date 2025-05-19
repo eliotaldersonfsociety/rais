@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     console.log("Resultado del insert:", result);
 
-    const orderId = result.lastInsertRowid as number;
+    const orderId = Number(result.lastInsertRowid);
     console.log("ID de la orden insertada:", orderId);
 
     // 6. Guardar los productos asociados a la orden
