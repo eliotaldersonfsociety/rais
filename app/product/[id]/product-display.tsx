@@ -622,7 +622,7 @@ export default function ProductDisplay({ product }: { product: Product }) {
           <FAQ />
         </div> {/* Fin Columna Derecha */}
       </div> {/* Fin Grid Principal */}
-      <CommentsPage averageRating={rating} />
+      <CommentsPage averageRating={typeof rating === 'number' ? rating : 5} />
     </div> // Fin Container
   );
 }
