@@ -3,8 +3,9 @@ import db from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/lib/register/schema";
 
-export async function POST(req, { params }: { params: { id: string } }) {
-  const { id } = params;
+export async function POST(req: Request) {
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop(); // Extrae el id de la URL
   const { amount } = await req.json();
 
   if (!amount || isNaN(amount) || amount <= 0) {
