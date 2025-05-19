@@ -1,628 +1,1026 @@
-"use client"; // Asegúrate de que esta directiva esté si es necesaria
+"use client";
+import { useEffect, useState } from "react";
+import { Star } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
-import { useCart } from "@/context/CartContext";
-import Image from "next/image";
-import { Minus, Plus, ShoppingCart, Heart, Share2, Truck, RotateCcw, Shield } from "lucide-react";
-// Importa useState para los estados locales
-import { useState, useEffect } from "react";
-import Ofert from "@/components/oferta/page"; // Asegúrate que la ruta sea correcta
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useWishlist } from "@/context/WishlistContext"; // Asegúrate que la ruta sea correcta
-import { toast } from "react-toastify";
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
-import CommentsPage from "@/app/comentarios/page";
-import { Card, CardContent } from "@/components/ui/card";
-import CountdownTimer from "@/components/countdown-timer";
-import FAQ from "@/app/preguntas/page";
-import { useUser } from "@clerk/nextjs";
-// Interfaz para definir la estructura del objeto producto
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  compareAtPrice?: number;
-  costPerItem?: number;
-  vendor?: string;
-  productType?: string;
-  status?: boolean; // Indica si está en stock
-  category?: string;
-  tags?: string;
-  sku?: string;
-  barcode?: string;
-  quantity?: number; // Cantidad disponible
-  trackInventory?: boolean;
-  images: string[]; // Lista de URLs de imágenes
-  sizes?: string[]; // Tallas como S, M, L
-  sizeRange?: { min: number; max: number }; // Rango de tallas numéricas (ej. zapatos)
-  colors?: string[]; // Lista de colores disponibles
-}
+export default function CommentsPage({ averageRating }: { averageRating: number }) {
+  // Array de 100 comentarios aleatorios
+  const randomComments = [
+    {
+      id: 1,
+      name: "María G.",
+      date: "15 May 2023",
+      title: "Excelente producto, superó mis expectativas",
+      comment:
+        "¡Este producto cambió mi vida! Lo recomiendo totalmente a todos mis amigos. La calidad es excepcional y el envío fue muy rápido.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 2,
+      name: "Juan R.",
+      date: "3 May 2023",
+      title: "Buena relación calidad-precio",
+      comment:
+        "La atención al cliente fue excelente. Resolvieron mi problema en minutos. El producto funciona como se describe.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 3,
+      name: "Ana M.",
+      date: "28 Abr 2023",
+      title: "Muy satisfecha con mi compra",
+      comment:
+        "Increíble experiencia de usuario. La interfaz es intuitiva y fácil de usar. Definitivamente compraré más productos de esta marca.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 4,
+      name: "Carlos L.",
+      date: "15 Abr 2023",
+      title: "Cumple con lo básico",
+      comment:
+        "Estoy satisfecho con los resultados. Definitivamente volveré a utilizar este servicio, aunque hay algunos detalles que podrían mejorar.",
+      rating: 3,
+      verified: false,
+    },
+    {
+      id: 5,
+      name: "Laura S.",
+      date: "2 Abr 2023",
+      title: "Buen producto, envío rápido",
+      comment:
+        "La relación calidad-precio es inmejorable. Vale cada centavo invertido. Llegó antes de lo esperado y en perfectas condiciones.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 6,
+      name: "Pedro V.",
+      date: "28 Mar 2023",
+      title: "No cumplió con mis expectativas",
+      comment:
+        "El producto llegó con algunos defectos. La atención al cliente fue buena y me ofrecieron un reembolso, pero esperaba mejor calidad.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 7,
+      name: "Sofía H.",
+      date: "25 Mar 2023",
+      title: "Perfecto para mis necesidades",
+      comment:
+        "Exactamente lo que estaba buscando. Funciona perfectamente y el precio es muy razonable. Lo recomendaría sin dudarlo.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 8,
+      name: "Miguel A.",
+      date: "20 Mar 2023",
+      title: "Buen producto pero envío lento",
+      comment:
+        "El producto en sí es bueno, pero tardó más de lo esperado en llegar. Casi cancelo el pedido por la demora.",
+      rating: 3,
+      verified: true,
+    },
+    {
+      id: 9,
+      name: "Carmen D.",
+      date: "15 Mar 2023",
+      title: "Calidad excepcional",
+      comment:
+        "Nunca había probado algo así. La calidad es impresionante y el servicio al cliente es de primera. Definitivamente repetiré.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 10,
+      name: "Roberto F.",
+      date: "10 Mar 2023",
+      title: "Decepcionante",
+      comment:
+        "No funciona como esperaba. Las instrucciones no son claras y el soporte técnico no fue de ayuda. No lo recomendaría.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 11,
+      name: "Elena P.",
+      date: "5 Mar 2023",
+      title: "Sorprendentemente bueno",
+      comment:
+        "No esperaba mucho por el precio, pero me ha sorprendido gratamente. Funciona perfectamente y es muy fácil de usar.",
+      rating: 5,
+      verified: false,
+    },
+    {
+      id: 12,
+      name: "Javier M.",
+      date: "28 Feb 2023",
+      title: "Bueno, pero podría ser mejor",
+      comment:
+        "Cumple con su función básica, pero le faltan algunas características que otros productos similares sí tienen.",
+      rating: 3,
+      verified: true,
+    },
+    {
+      id: 13,
+      name: "Isabel R.",
+      date: "25 Feb 2023",
+      title: "Excelente servicio",
+      comment:
+        "El producto es bueno, pero lo que realmente destaca es el servicio al cliente. Muy atentos y resolutivos.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 14,
+      name: "Fernando T.",
+      date: "20 Feb 2023",
+      title: "No lo recomendaría",
+      comment:
+        "Mala calidad y peor servicio. No responden a las consultas y el producto se estropeó a las dos semanas.",
+      rating: 1,
+      verified: false,
+    },
+    {
+      id: 15,
+      name: "Lucía G.",
+      date: "15 Feb 2023",
+      title: "Perfecto para regalo",
+      comment: "Lo compré como regalo y fue un éxito. El empaquetado es muy bonito y el producto de gran calidad.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 16,
+      name: "Antonio S.",
+      date: "10 Feb 2023",
+      title: "Buena compra",
+      comment:
+        "Relación calidad-precio muy buena. No es el mejor del mercado pero cumple perfectamente con lo que promete.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 17,
+      name: "Marta L.",
+      date: "5 Feb 2023",
+      title: "Increíble hallazgo",
+      comment: "Llevaba tiempo buscando algo así. Es perfecto para mis necesidades y a un precio muy competitivo.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 18,
+      name: "David R.",
+      date: "31 Ene 2023",
+      title: "Decente, pero esperaba más",
+      comment: "No está mal, pero por el precio que tiene esperaba algo mejor. Cumple su función pero sin destacar.",
+      rating: 3,
+      verified: true,
+    },
+    {
+      id: 19,
+      name: "Cristina M.",
+      date: "28 Ene 2023",
+      title: "Compra repetida",
+      comment: "Ya es la tercera vez que lo compro. Eso lo dice todo. Calidad constante y buen servicio.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 20,
+      name: "Pablo A.",
+      date: "25 Ene 2023",
+      title: "Mala experiencia",
+      comment: "El producto vino defectuoso y tardaron semanas en responder a mi reclamación. No volveré a comprar.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 21,
+      name: "Natalia V.",
+      date: "20 Ene 2023",
+      title: "Muy recomendable",
+      comment:
+        "Excelente producto a un precio justo. La entrega fue rápida y el producto llegó en perfectas condiciones.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 22,
+      name: "Sergio P.",
+      date: "15 Ene 2023",
+      title: "Buen producto, mal servicio",
+      comment: "El producto en sí es bueno, pero el servicio post-venta deja mucho que desear. Tardan en responder.",
+      rating: 3,
+      verified: false,
+    },
+    {
+      id: 23,
+      name: "Raquel F.",
+      date: "10 Ene 2023",
+      title: "Mejor de lo esperado",
+      comment: "Superó mis expectativas en todos los aspectos. Calidad, durabilidad y diseño excelentes.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 24,
+      name: "Jorge L.",
+      date: "5 Ene 2023",
+      title: "Calidad aceptable",
+      comment: "No es el mejor que he probado, pero cumple bien con su función. Relación calidad-precio correcta.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 25,
+      name: "Alicia R.",
+      date: "31 Dic 2022",
+      title: "Excelente compra",
+      comment: "Muy satisfecha con mi compra. Funciona perfectamente y el diseño es muy elegante.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 26,
+      name: "Daniel M.",
+      date: "28 Dic 2022",
+      title: "No lo recomiendo",
+      comment: "Mala calidad y pésimo servicio al cliente. No responden a las reclamaciones.",
+      rating: 1,
+      verified: false,
+    },
+    {
+      id: 27,
+      name: "Eva S.",
+      date: "25 Dic 2022",
+      title: "Regalo perfecto",
+      comment: "Lo compré como regalo de Navidad y fue todo un acierto. Muy buena calidad y presentación.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 28,
+      name: "Adrián G.",
+      date: "20 Dic 2022",
+      title: "Buena relación calidad-precio",
+      comment: "No es el más barato, pero la calidad justifica el precio. Muy satisfecho con la compra.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 29,
+      name: "Beatriz T.",
+      date: "15 Dic 2022",
+      title: "Decepcionante",
+      comment: "No cumple con lo que promete. La calidad es inferior a lo que muestran las fotos.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 30,
+      name: "Víctor H.",
+      date: "10 Dic 2022",
+      title: "Excelente producto",
+      comment: "Uno de los mejores productos que he comprado. Funciona perfectamente y es muy duradero.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 31,
+      name: "Marina C.",
+      date: "5 Dic 2022",
+      title: "Buen producto",
+      comment: "Cumple con lo que promete. No es extraordinario pero hace bien su función.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 32,
+      name: "Rubén D.",
+      date: "30 Nov 2022",
+      title: "No vale lo que cuesta",
+      comment: "Demasiado caro para la calidad que ofrece. Hay alternativas mejores por el mismo precio.",
+      rating: 2,
+      verified: false,
+    },
+    {
+      id: 33,
+      name: "Silvia P.",
+      date: "25 Nov 2022",
+      title: "Muy satisfecha",
+      comment: "Excelente producto y servicio. Llegó antes de lo esperado y en perfectas condiciones.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 34,
+      name: "Alberto M.",
+      date: "20 Nov 2022",
+      title: "Buena compra",
+      comment: "Relación calidad-precio muy buena. Funciona como esperaba y el envío fue rápido.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 35,
+      name: "Nuria F.",
+      date: "15 Nov 2022",
+      title: "Increíble",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 36,
+      name: "Óscar L.",
+      date: "10 Nov 2022",
+      title: "Aceptable",
+      comment: "No está mal, pero tampoco es extraordinario. Cumple con lo básico sin más.",
+      rating: 3,
+      verified: true,
+    },
+    {
+      id: 37,
+      name: "Teresa R.",
+      date: "5 Nov 2022",
+      title: "Muy recomendable",
+      comment: "Excelente calidad y servicio. El producto llegó en perfectas condiciones y antes de lo esperado.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 38,
+      name: "Gonzalo S.",
+      date: "31 Oct 2022",
+      title: "No cumplió expectativas",
+      comment: "Esperaba más por el precio que pagué. La calidad es inferior a lo que muestran las imágenes.",
+      rating: 2,
+      verified: false,
+    },
+    {
+      id: 39,
+      name: "Mónica V.",
+      date: "28 Oct 2022",
+      title: "Excelente compra",
+      comment: "Muy satisfecha con mi compra. El producto es de gran calidad y el servicio impecable.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 40,
+      name: "Ignacio M.",
+      date: "25 Oct 2022",
+      title: "Buen producto",
+      comment: "Cumple con lo que promete. La relación calidad-precio es muy buena.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 41,
+      name: "Lorena G.",
+      date: "20 Oct 2022",
+      title: "No lo recomendaría",
+      comment: "Mala calidad y pésimo servicio al cliente. No responden a las reclamaciones.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 42,
+      name: "Héctor P.",
+      date: "15 Oct 2022",
+      title: "Muy bueno",
+      comment: "Excelente producto a un precio razonable. Muy satisfecho con mi compra.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 43,
+      name: "Diana L.",
+      date: "10 Oct 2022",
+      title: "Buena relación calidad-precio",
+      comment: "No es el más barato, pero la calidad justifica el precio. Recomendable.",
+      rating: 4,
+      verified: false,
+    },
+    {
+      id: 44,
+      name: "Andrés R.",
+      date: "5 Oct 2022",
+      title: "Excelente",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 45,
+      name: "Celia M.",
+      date: "30 Sep 2022",
+      title: "Decepcionante",
+      comment: "No cumple con lo que promete. La calidad es inferior a lo que muestran las fotos.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 46,
+      name: "Raúl S.",
+      date: "25 Sep 2022",
+      title: "Muy satisfecho",
+      comment: "Excelente producto y servicio. Llegó antes de lo esperado y en perfectas condiciones.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 47,
+      name: "Pilar F.",
+      date: "20 Sep 2022",
+      title: "Buena compra",
+      comment: "Relación calidad-precio muy buena. Funciona como esperaba y el envío fue rápido.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 48,
+      name: "Marcos L.",
+      date: "15 Sep 2022",
+      title: "No vale lo que cuesta",
+      comment: "Demasiado caro para la calidad que ofrece. Hay alternativas mejores por el mismo precio.",
+      rating: 2,
+      verified: false,
+    },
+    {
+      id: 49,
+      name: "Susana P.",
+      date: "10 Sep 2022",
+      title: "Increíble",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 50,
+      name: "Joaquín M.",
+      date: "5 Sep 2022",
+      title: "Aceptable",
+      comment: "No está mal, pero tampoco es extraordinario. Cumple con lo básico sin más.",
+      rating: 3,
+      verified: true,
+    },
+    {
+      id: 51,
+      name: "Esther G.",
+      date: "31 Ago 2022",
+      title: "Muy recomendable",
+      comment: "Excelente calidad y servicio. El producto llegó en perfectas condiciones y antes de lo esperado.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 52,
+      name: "Alejandro R.",
+      date: "28 Ago 2022",
+      title: "No cumplió expectativas",
+      comment: "Esperaba más por el precio que pagué. La calidad es inferior a lo que muestran las imágenes.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 53,
+      name: "Irene S.",
+      date: "25 Ago 2022",
+      title: "Excelente compra",
+      comment: "Muy satisfecha con mi compra. El producto es de gran calidad y el servicio impecable.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 54,
+      name: "Gabriel M.",
+      date: "20 Ago 2022",
+      title: "Buen producto",
+      comment: "Cumple con lo que promete. La relación calidad-precio es muy buena.",
+      rating: 4,
+      verified: false,
+    },
+    {
+      id: 55,
+      name: "Verónica L.",
+      date: "15 Ago 2022",
+      title: "No lo recomendaría",
+      comment: "Mala calidad y pésimo servicio al cliente. No responden a las reclamaciones.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 56,
+      name: "Hugo P.",
+      date: "10 Ago 2022",
+      title: "Muy bueno",
+      comment: "Excelente producto a un precio razonable. Muy satisfecho con mi compra.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 57,
+      name: "Claudia F.",
+      date: "5 Ago 2022",
+      title: "Buena relación calidad-precio",
+      comment: "No es el más barato, pero la calidad justifica el precio. Recomendable.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 58,
+      name: "Nicolás R.",
+      date: "31 Jul 2022",
+      title: "Excelente",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: false,
+    },
+    {
+      id: 59,
+      name: "Olga M.",
+      date: "28 Jul 2022",
+      title: "Decepcionante",
+      comment: "No cumple con lo que promete. La calidad es inferior a lo que muestran las fotos.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 60,
+      name: "Emilio S.",
+      date: "25 Jul 2022",
+      title: "Muy satisfecho",
+      comment: "Excelente producto y servicio. Llegó antes de lo esperado y en perfectas condiciones.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 61,
+      name: "Lidia G.",
+      date: "20 Jul 2022",
+      title: "Buena compra",
+      comment: "Relación calidad-precio muy buena. Funciona como esperaba y el envío fue rápido.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 62,
+      name: "Tomás L.",
+      date: "15 Jul 2022",
+      title: "No vale lo que cuesta",
+      comment: "Demasiado caro para la calidad que ofrece. Hay alternativas mejores por el mismo precio.",
+      rating: 2,
+      verified: false,
+    },
+    {
+      id: 63,
+      name: "Aurora P.",
+      date: "10 Jul 2022",
+      title: "Increíble",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 64,
+      name: "Ismael M.",
+      date: "5 Jul 2022",
+      title: "Aceptable",
+      comment: "No está mal, pero tampoco es extraordinario. Cumple con lo básico sin más.",
+      rating: 3,
+      verified: true,
+    },
+    {
+      id: 65,
+      name: "Rocío F.",
+      date: "30 Jun 2022",
+      title: "Muy recomendable",
+      comment: "Excelente calidad y servicio. El producto llegó en perfectas condiciones y antes de lo esperado.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 66,
+      name: "Julián R.",
+      date: "25 Jun 2022",
+      title: "No cumplió expectativas",
+      comment: "Esperaba más por el precio que pagué. La calidad es inferior a lo que muestran las imágenes.",
+      rating: 2,
+      verified: false,
+    },
+    {
+      id: 67,
+      name: "Nerea S.",
+      date: "20 Jun 2022",
+      title: "Excelente compra",
+      comment: "Muy satisfecha con mi compra. El producto es de gran calidad y el servicio impecable.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 68,
+      name: "Bruno M.",
+      date: "15 Jun 2022",
+      title: "Buen producto",
+      comment: "Cumple con lo que promete. La relación calidad-precio es muy buena.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 69,
+      name: "Ángela L.",
+      date: "10 Jun 2022",
+      title: "No lo recomendaría",
+      comment: "Mala calidad y pésimo servicio al cliente. No responden a las reclamaciones.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 70,
+      name: "Darío P.",
+      date: "5 Jun 2022",
+      title: "Muy bueno",
+      comment: "Excelente producto a un precio razonable. Muy satisfecho con mi compra.",
+      rating: 5,
+      verified: false,
+    },
+    {
+      id: 71,
+      name: "Miriam G.",
+      date: "31 May 2022",
+      title: "Buena relación calidad-precio",
+      comment: "No es el más barato, pero la calidad justifica el precio. Recomendable.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 72,
+      name: "Samuel R.",
+      date: "28 May 2022",
+      title: "Excelente",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 73,
+      name: "Inés M.",
+      date: "25 May 2022",
+      title: "Decepcionante",
+      comment: "No cumple con lo que promete. La calidad es inferior a lo que muestran las fotos.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 74,
+      name: "Álvaro S.",
+      date: "20 May 2022",
+      title: "Muy satisfecho",
+      comment: "Excelente producto y servicio. Llegó antes de lo esperado y en perfectas condiciones.",
+      rating: 5,
+      verified: false,
+    },
+    {
+      id: 75,
+      name: "Noelia F.",
+      date: "15 May 2022",
+      title: "Buena compra",
+      comment: "Relación calidad-precio muy buena. Funciona como esperaba y el envío fue rápido.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 76,
+      name: "Iván L.",
+      date: "10 May 2022",
+      title: "No vale lo que cuesta",
+      comment: "Demasiado caro para la calidad que ofrece. Hay alternativas mejores por el mismo precio.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 77,
+      name: "Carla P.",
+      date: "5 May 2022",
+      title: "Increíble",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 78,
+      name: "Adrián M.",
+      date: "30 Abr 2022",
+      title: "Aceptable",
+      comment: "No está mal, pero tampoco es extraordinario. Cumple con lo básico sin más.",
+      rating: 3,
+      verified: false,
+    },
+    {
+      id: 79,
+      name: "Blanca G.",
+      date: "25 Abr 2022",
+      title: "Muy recomendable",
+      comment: "Excelente calidad y servicio. El producto llegó en perfectas condiciones y antes de lo esperado.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 80,
+      name: "Rodrigo R.",
+      date: "20 Abr 2022",
+      title: "No cumplió expectativas",
+      comment: "Esperaba más por el precio que pagué. La calidad es inferior a lo que muestran las imágenes.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 81,
+      name: "Ainhoa S.",
+      date: "15 Abr 2022",
+      title: "Excelente compra",
+      comment: "Muy satisfecha con mi compra. El producto es de gran calidad y el servicio impecable.",
+      rating: 5,
+      verified: false,
+    },
+    {
+      id: 82,
+      name: "Martín M.",
+      date: "10 Abr 2022",
+      title: "Buen producto",
+      comment: "Cumple con lo que promete. La relación calidad-precio es muy buena.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 83,
+      name: "Candela L.",
+      date: "5 Abr 2022",
+      title: "No lo recomendaría",
+      comment: "Mala calidad y pésimo servicio al cliente. No responden a las reclamaciones.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 84,
+      name: "Mateo P.",
+      date: "31 Mar 2022",
+      title: "Muy bueno",
+      comment: "Excelente producto a un precio razonable. Muy satisfecho con mi compra.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 85,
+      name: "Valeria G.",
+      date: "28 Mar 2022",
+      title: "Buena relación calidad-precio",
+      comment: "No es el más barato, pero la calidad justifica el precio. Recomendable.",
+      rating: 4,
+      verified: false,
+    },
+    {
+      id: 86,
+      name: "Leo R.",
+      date: "25 Mar 2022",
+      title: "Excelente",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 87,
+      name: "Alma M.",
+      date: "20 Mar 2022",
+      title: "Decepcionante",
+      comment: "No cumple con lo que promete. La calidad es inferior a lo que muestran las fotos.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 88,
+      name: "Unai S.",
+      date: "15 Mar 2022",
+      title: "Muy satisfecho",
+      comment: "Excelente producto y servicio. Llegó antes de lo esperado y en perfectas condiciones.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 89,
+      name: "Lola F.",
+      date: "10 Mar 2022",
+      title: "Buena compra",
+      comment: "Relación calidad-precio muy buena. Funciona como esperaba y el envío fue rápido.",
+      rating: 4,
+      verified: false,
+    },
+    {
+      id: 90,
+      name: "Iker L.",
+      date: "5 Mar 2022",
+      title: "No vale lo que cuesta",
+      comment: "Demasiado caro para la calidad que ofrece. Hay alternativas mejores por el mismo precio.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 91,
+      name: "Abril P.",
+      date: "28 Feb 2022",
+      title: "Increíble",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 92,
+      name: "Izan M.",
+      date: "25 Feb 2022",
+      title: "Aceptable",
+      comment: "No está mal, pero tampoco es extraordinario. Cumple con lo básico sin más.",
+      rating: 3,
+      verified: false,
+    },
+    {
+      id: 93,
+      name: "Vera G.",
+      date: "20 Feb 2022",
+      title: "Muy recomendable",
+      comment: "Excelente calidad y servicio. El producto llegó en perfectas condiciones y antes de lo esperado.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 94,
+      name: "Nil R.",
+      date: "15 Feb 2022",
+      title: "No cumplió expectativas",
+      comment: "Esperaba más por el precio que pagué. La calidad es inferior a lo que muestran las imágenes.",
+      rating: 2,
+      verified: true,
+    },
+    {
+      id: 95,
+      name: "Laia S.",
+      date: "10 Feb 2022",
+      title: "Excelente compra",
+      comment: "Muy satisfecha con mi compra. El producto es de gran calidad y el servicio impecable.",
+      rating: 5,
+      verified: false,
+    },
+    {
+      id: 96,
+      name: "Biel M.",
+      date: "5 Feb 2022",
+      title: "Buen producto",
+      comment: "Cumple con lo que promete. La relación calidad-precio es muy buena.",
+      rating: 4,
+      verified: true,
+    },
+    {
+      id: 97,
+      name: "Noa L.",
+      date: "31 Ene 2022",
+      title: "No lo recomendaría",
+      comment: "Mala calidad y pésimo servicio al cliente. No responden a las reclamaciones.",
+      rating: 1,
+      verified: true,
+    },
+    {
+      id: 98,
+      name: "Marc P.",
+      date: "28 Ene 2022",
+      title: "Muy bueno",
+      comment: "Excelente producto a un precio razonable. Muy satisfecho con mi compra.",
+      rating: 5,
+      verified: true,
+    },
+    {
+      id: 99,
+      name: "Aina G.",
+      date: "25 Ene 2022",
+      title: "Buena relación calidad-precio",
+      comment: "No es el más barato, pero la calidad justifica el precio. Recomendable.",
+      rating: 4,
+      verified: false,
+    },
+    {
+      id: 100,
+      name: "Jan R.",
+      date: "20 Ene 2022",
+      title: "Excelente",
+      comment: "Uno de los mejores productos que he comprado. Calidad excepcional y muy fácil de usar.",
+      rating: 5,
+      verified: true,
+    },
+  ]
 
-// Loader personalizado para Next/Image (opcional)
-const customLoader = ({ src, width, quality }: { src: string; width: number; quality?: number }) => {
-  return `${src}?w=${width}&q=${quality || 75}`;
-};
-
-// Funciones para generar datos aleatorios (si son necesarias)
-const getRandomRating = () => parseFloat((Math.random() * (5 - 3.8) + 3.8).toFixed(1));
-const getRandomReviews = () => Math.floor(Math.random() * (107 - 23 + 1)) + 23;
-
-// Componente principal
-export default function ProductDisplay({ product }: { product: Product }) {
-  console.log("Datos COMPLETOS del producto recibidos:", JSON.stringify(product, null, 2));
-  console.log(">>> Tipo de product.quantity:", typeof product.quantity, "|| Valor:", product.quantity);
-  // Hooks de contexto para carrito y lista de deseos
-  const { addToCart } = useCart();
-  const {
-    addToWishlist,
-    removeFromWishlist,
-    wishlist,
-    isProductInWishlist,
-    setWishlist,
-    fetchWishlist
-  } = useWishlist();
-  const { isSignedIn, isLoaded, user } = useUser();
-
-  // Estados locales del componente
-  const [selectedImage, setSelectedImage] = useState(0); // Índice de la imagen principal mostrada
-  const [quantity, setQuantity] = useState(1); // Cantidad seleccionada por el usuario
-  const [selectedColor, setSelectedColor] = useState<string | null>(null); // Color seleccionado
-  const [selectedSize, setSelectedSize] = useState<string | null>(null); // Talla seleccionada (S, M, L)
-  const [selectedSizeRange, setSelectedSizeRange] = useState<number | null>(null); // Talla numérica seleccionada
-  const [isWishlistButtonActive, setIsWishlistButtonActive] = useState(false); // Controla si el botón de wishlist está activo (rojo)
-  const [isWishlistLoading, setIsWishlistLoading] = useState(false); // Controla el estado de carga del botón wishlist
-
-  // Calcula el porcentaje de descuento si existe precio de comparación
-  const discountPercentage = product.compareAtPrice
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
-    : 0;
-
-  // Genera una calificación y estrellas aleatorias (puedes reemplazar esto con datos reales)
-  const rating = getRandomRating();
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 >= 0.5;
-
-  // Funciones para manejar la cantidad
-  const increaseQuantity = () => setQuantity((prev) => prev + 1);
-  const decreaseQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
-
-  // Función para añadir al carrito
-  const handleAddToCart = () => {
-    // Aquí podrías añadir validaciones (ej. si se seleccionó color/talla si son requeridos)
-    if (product.colors && product.colors.length > 0 && !selectedColor) {
-        toast.warn("Por favor, selecciona un color.");
-        return;
-    }
-     if (product.sizes && product.sizes.length > 0 && product.category !== 'zapatos' && !selectedSize) {
-        toast.warn("Por favor, selecciona una talla.");
-        return;
-    }
-     if (product.sizeRange && product.category !== 'Moda' && !selectedSizeRange) {
-        toast.warn("Por favor, selecciona una talla numérica.");
-        return;
-    }
-
-    addToCart({
-      id: product.id,
-      name: product.title,
-      price: product.price,
-      image: product.images?.[0] || '/placeholder.svg', // Usa la primera imagen o un placeholder
-      quantity: quantity, // Usa la cantidad seleccionada
-      color: selectedColor,
-      size: selectedSize,
-      sizeRange: selectedSizeRange,
-    });
-    toast.success(`${quantity} "${product.title}" añadido(s) al carrito!`);
-    setQuantity(1); // Resetea la cantidad a 1 después de añadir
-  };
+  const [commentsToShow, setCommentsToShow] = useState<typeof randomComments>([]);
+  const [numComments, setNumComments] = useState(3);
 
   useEffect(() => {
-    const inWishlist = isProductInWishlist(product.id);
-    setIsWishlistButtonActive(inWishlist);
-  }, [isProductInWishlist, product.id, wishlist]);
-  
-  const handleWishlistAction = async () => {
-    if (!isSignedIn) {
-      toast.info("Debes iniciar sesión para añadir a favoritos.");
-      return;
+    // Función para actualizar el número de comentarios según el ancho de pantalla
+    function updateNumComments() {
+      if (window.innerWidth >= 1024) {
+        setNumComments(7); // lg o mayor
+      } else if (window.innerWidth >= 768) {
+        setNumComments(4); // md
+      } else {
+        setNumComments(3); // móvil
+      }
     }
-    setIsWishlistLoading(true);
-    try {
-      await addToWishlist(product.id, product);
-      // Puedes mostrar un toast genérico aquí si quieres
-      toast.success("Favoritos actualizado");
-    } finally {
-      setIsWishlistLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchWishlist();
-    } else {
-      setWishlist([]); // O null, según tu lógica
-    }
-  }, [isSignedIn]);
-
-  // Prueba de toast y logs
-  useEffect(() => {
-    console.log("useToast hook ejecutado");
+    updateNumComments();
+    window.addEventListener('resize', updateNumComments);
+    return () => window.removeEventListener('resize', updateNumComments);
   }, []);
 
-  // Renderizado de Skeleton mientras carga el producto
-  if (!product || !product.title || !product.images || product.price === undefined) {
-    return (
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <Skeleton height={50} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          <div className="space-y-4">
-            <Skeleton height={400} />
-            <Skeleton height={100} />
-          </div>
-          <div className="flex flex-col space-y-6">
-            <Skeleton height={30} width={200} />
-            <Skeleton height={20} width={150} />
-            <Skeleton height={50} />
-            <Skeleton height={30} width={100} />
-            <Skeleton height={20} width={150} />
-            <Skeleton height={50} />
-            <Skeleton height={50} />
-          </div>
-        </div>
-      </div>
-    );
+  useEffect(() => {
+    setCommentsToShow(getRandomComments(randomComments, numComments));
+  }, [numComments]);
+
+  function getRandomComments<T>(array: T[], count: number): T[] {
+    const shuffled = array.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, Math.min(count, shuffled.length));
   }
 
-  // Handlers para cambios en color, talla y rango de talla
-  const handleColorChange = (color: string) => {
-    setSelectedColor(color);
-  };
-
-  const handleSizeChange = (size: string) => {
-    setSelectedSize(size);
-  };
-
-  const handleSizeRangeChange = (sizeRange: number) => {
-    setSelectedSizeRange(sizeRange);
-  };
-
-  // Función para compartir el producto
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.title,
-          text: product.description,
-          url: window.location.href,
-        });
-        toast.success("Producto compartido exitosamente");
-      } catch (error) {
-        console.error("Share error:", error)
-        toast.error("Error al compartir el producto");
-      }
-    } else {
-      toast.info("La función de compartir no está soportada en este navegador");
-       // Fallback: Copiar al portapapeles
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success("Enlace copiado al portapapeles");
-      } catch (err) {
-        toast.error("No se pudo copiar el enlace");
-      }
-    }
-  };
-
-  function renderStars(rating: number) {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
-    return (
-      <>
-        {Array.from({ length: fullStars }).map((_, i) => (
-          <svg key={`full-${i}`} className="w-4 h-4 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24">
-            <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
-          </svg>
-        ))}
-        {hasHalfStar && (
-          <svg key="half" className="w-4 h-4" viewBox="0 0 24 24">
-            <defs>
-              <linearGradient id="half-grad">
-                <stop offset="50%" stopColor="#facc15" />
-                <stop offset="50%" stopColor="#d1d5db" />
-              </linearGradient>
-            </defs>
-            <path
-              fill="url(#half-grad)"
-              d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z"
-            />
-          </svg>
-        )}
-        {Array.from({ length: emptyStars }).map((_, i) => (
-          <svg key={`empty-${i}`} className="w-4 h-4 text-gray-300" viewBox="0 0 24 24">
-            <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
-          </svg>
-        ))}
-      </>
-    );
-  }
-
-  // --- Renderizado del Componente ---
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
-      {/* Breadcrumbs */}
-      <div className="text-sm text-muted-foreground mb-6">
-        <span className="hover:underline cursor-pointer">Home</span> /
-        <span className="hover:underline cursor-pointer mx-2">{product.category || "Products"}</span> /
-        <span className="font-medium text-foreground">{product.title}</span>
+    <div className="w-full py-4 px-2 md:px-4">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold mb-2">Opiniones de clientes</h1>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                className={`h-4 w-4 ${
+                  i < Math.floor(Number(averageRating)) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="font-medium">{averageRating.toFixed(1)} de 5</span>
+          <span className="text-sm text-muted-foreground">({randomComments.length} valoraciones)</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-        {/* Columna Izquierda: Imágenes y Oferta */}
-        <div className="space-y-4">
-          {product.images?.length > 0 ? (
-            <>
-              {/* Imagen Principal */}
-              <div className="relative aspect-square overflow-hidden rounded-lg border bg-background">
-                <Image
-                  loader={customLoader}
-                  src={product.images[selectedImage]}
-                  alt={product.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Añade sizes para optimizar
-                  className="object-contain" // object-contain para ver toda la imagen
-                  priority // Carga esta imagen primero
-                />
-                {discountPercentage > 0 && (
-                  <Badge className="absolute top-4 left-4 bg-red-500 hover:bg-red-600 text-white">
-                    Save {discountPercentage}%
-                  </Badge>
-                )}
-              </div>
-              {/* Miniaturas */}
-              {product.images.length > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {product.images.map((image, index) => (
-                    <div
-                      key={index}
-                      className={`relative aspect-square overflow-hidden rounded-md border bg-background cursor-pointer transition-all ${
-                        selectedImage === index ? "ring-2 ring-primary ring-offset-2" : "hover:opacity-80"
-                      }`}
-                      onClick={() => setSelectedImage(index)}
-                    >
-                      <Image
-                        loader={customLoader}
-                        src={image}
-                        alt={`${product.title} - Image ${index + 1}`}
-                        fill
-                        sizes="10vw" // Tamaño pequeño para miniaturas
-                        className="object-contain"
+      <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-7 md:gap-4">
+        {commentsToShow.map((comment) => (
+          <Card key={comment.id} className="overflow-hidden border-gray-200">
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-3 w-3 ${
+                          i < comment.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        }`}
                       />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            // Placeholder si no hay imágenes
-            <div className="relative aspect-square overflow-hidden rounded-lg border bg-gray-100">
-              <Image
-                loader={customLoader}
-                src="/placeholder.svg" // Asegúrate que este placeholder exista en tu carpeta public
-                alt={product.title}
-                fill
-                className="object-cover text-gray-300" // object-cover para llenar el espacio
-              />
-               <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">No Image</span>
-            </div>
-          )}
-          {/* Componente de Oferta */}
-          <Ofert />
-        </div>
-
-        {/* Columna Derecha: Detalles, Opciones y Acciones */}
-        <div className="flex flex-col space-y-6">
-          {/* Información Principal */}
-          <div className="space-y-2">
-            {product.vendor && (
-              <div className="text-sm text-muted-foreground">
-                Vendido por: <span className="hover:underline cursor-pointer font-medium">{product.vendor}</span>
-              </div>
-            )}
-            <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">{product.title}</h1>
-
-            {/* Calificación y Reviews */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                {renderStars(rating)}
-              </div>
-              <span className="font-medium">{rating} de 5</span>
-              <span className="text-sm text-muted-foreground">({getRandomReviews()} valoraciones)</span>
-            </div>
-
-            {/* Precio */}
-            <div className="flex items-baseline gap-3 mt-2">
-              <p className="text-2xl text-green-600 font-bold ">
-                ${product.price ? product.price.toFixed(2) : 'N/A'}
-              </p>
-              {product.compareAtPrice && product.compareAtPrice > product.price && (
-                <p className="text-base text-red-600 text-muted-foreground line-through">
-                  ${product.compareAtPrice.toFixed(2)}
-                </p>
-              )}
-            </div>
-
-            {/* Estado y Cantidad */}
-            <div className="flex items-center gap-2">
-              {product.status ? (
-                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                  In stock
-                </Badge>
-              ) : (
-                <Badge variant="destructive">
-                  Out of stock
-                </Badge>
-              )}
-              {product.quantity !== undefined && product.quantity > 0 && (
-                <span className="text-sm text-muted-foreground">{product.quantity <= 10 ? `Only ${product.quantity} left!` : `${product.quantity} units available`}</span>
-              )}
-               {product.quantity !== undefined && product.quantity <= 0 && !product.status && (
-                 <span className="text-sm text-red-600">Currently unavailable</span>
-               )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Descripción Corta y SKU */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-muted-foreground">{product.description?.substring(0, 150)}{product.description && product.description.length > 150 ? '...' : ''}</p> {/* Muestra solo una parte */}
-            </div>
-            {product.sku && (
-              <div className="flex items-center text-sm">
-                <span className="text-muted-foreground mr-2">SKU:</span>
-                <span>{product.sku}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Opciones: Cantidad, Talla, Color */}
-          <div className="space-y-4 mt-6">
-            {/* Selector de Cantidad */}
-            <div className="flex items-center space-x-2">
-                <Label htmlFor="quantity" className="text-base mr-4">Quantity:</Label>
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={decreaseQuantity} aria-label="Decrease quantity">
-                    <Minus className="h-3 w-3" />
-                </Button>
-                <span id="quantity" className="w-12 text-center font-medium">{quantity}</span>
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={increaseQuantity} aria-label="Increase quantity" disabled={product.trackInventory && product.quantity !== undefined && quantity >= product.quantity}>
-                    <Plus className="h-3 w-3" />
-                </Button>
-            </div>
-
-
-            {/* Selector de Talla (S, M, L) */}
-            {product.sizes && product.sizes.length > 0 && product.category !== 'zapatos' && (
-              <div className="space-y-2">
-                <Label htmlFor="size-group" className="text-base">Size</Label>
-                <RadioGroup id="size-group" onValueChange={handleSizeChange} value={selectedSize || ''} className="flex flex-wrap items-center gap-2">
-                  {product.sizes.map((size) => (
-                    <Label
-                      key={size}
-                      htmlFor={`size-${size}`}
-                      className={`border cursor-pointer rounded-md px-3 py-1.5 text-sm flex items-center justify-center gap-2 transition-colors ${selectedSize === size ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' : 'hover:bg-muted'}`}
-                    >
-                      <RadioGroupItem value={size} id={`size-${size}`} className="sr-only" />
-                      {size}
-                    </Label>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-
-            {/* Selector de Talla Numérica (Rango) */}
-            {product.sizeRange && product.category !== 'Moda' && (() => {
-              const { min, max } = product.sizeRange;
-              // Asegurarse que min y max sean números válidos
-              if (typeof min !== 'number' || typeof max !== 'number' || min > max) return null;
-              return (
-                <div className="space-y-2">
-                  <Label htmlFor="size-range-group" className="text-base">Size</Label>
-                  <RadioGroup
-                    id="size-range-group"
-                    value={selectedSizeRange?.toString() || ''}
-                    onValueChange={(value) => handleSizeRangeChange(Number(value))}
-                    className="flex flex-wrap items-center gap-2"
-                  >
-                    {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((size) => (
-                      <Label
-                        key={size}
-                        htmlFor={`size-range-${size}`}
-                        className={`border cursor-pointer rounded-md px-3 py-1.5 text-sm flex items-center justify-center gap-2 transition-colors ${selectedSizeRange === size ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' : 'hover:bg-muted'}`}
-                      >
-                        <RadioGroupItem value={size.toString()} id={`size-range-${size}`} className="sr-only" />
-                        {size}
-                      </Label>
                     ))}
-                  </RadioGroup>
-                </div>
-              );
-            })()}
-
-            {/* Selector de Color */}
-            {product.colors && product.colors.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="color-group" className="text-base">Color</Label>
-                <RadioGroup id="color-group" value={selectedColor || ''} onValueChange={handleColorChange} className="flex flex-wrap items-center gap-2">
-                  {product.colors.map((color) => (
-                    <Label
-                      key={color}
-                      htmlFor={`color-${color}`}
-                       className={`border cursor-pointer rounded-md p-1 flex items-center justify-center gap-2 transition-colors ${selectedColor === color ? 'ring-2 ring-primary ring-offset-2' : 'hover:opacity-80'}`}
-                      // Añade título para accesibilidad y ver el nombre al pasar el ratón
-                       title={color}
+                  </div>
+                  {comment.verified && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal text-green-600 bg-green-50 border-green-200 rounded-sm px-1 py-0 h-auto"
                     >
-                       {/* Escondemos el radio button real */}
-                      <RadioGroupItem value={color} id={`color-${color}`} className="sr-only" />
-                       {/* Mostramos el círculo de color */}
-                      <span
-                        className="w-6 h-6 rounded-full border border-gray-300"
-                        style={{ backgroundColor: color.toLowerCase() }} // Asegura minúsculas para nombres CSS
-                       />
-                    </Label>
-                  ))}
-                </RadioGroup>
-                {/* Opcional: Mostrar nombre del color seleccionado */}
-                {selectedColor && <span className="text-sm text-muted-foreground ml-2">Selected: {selectedColor}</span>}
+                      Compra verificada
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium text-sm">{comment.title}</h3>
+                </div>
+
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <span>{comment.name}</span>
+                  <span className="mx-1">•</span>
+                  <span>{comment.date}</span>
+                </div>
+
+                <p className="text-sm text-muted-foreground">{comment.comment}</p>
+
+                <div className="flex items-center gap-4 pt-1">
+                  <button className="text-xs text-muted-foreground flex items-center gap-1 hover:text-gray-700">
+                    <span>¿Te ha parecido útil?</span>
+                  </button>
+                </div>
               </div>
-            )}
-
-            {/* Botones de Acción: Add to Cart y Wishlist */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-            <Button
-              size="lg"
-              className="w-full bg-green-600 text-white animate-bounce"
-              onClick={handleAddToCart}
-              disabled={!product.status || (product.trackInventory && product.quantity !== undefined && product.quantity <= 0) || isWishlistLoading}
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Add to Cart
-            </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                disabled={isWishlistLoading}
-                className={`w-full flex items-center justify-center gap-2 transition-colors duration-200 ${
-                  isWishlistButtonActive
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-300'
-                    : 'hover:bg-gray-100'
-                } ${
-                  isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                onClick={handleWishlistAction}
-              >
-                {isWishlistLoading ? (
-                  <>
-                    <span className="animate-spin h-4 w-4 border-t-2 border-b-2 border-current rounded-full mr-2"></span>
-                    Procesando...
-                  </>
-                ) : (
-                  <>
-                    <Heart className={`h-4 w-4 ${isWishlistButtonActive ? 'fill-red-500 text-red-600' : 'text-gray-500'}`} />
-                    {isWishlistButtonActive ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Información Adicional: Envío, Devoluciones, etc. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span>Free shipping over $50</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span>30-day easy returns</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span>2-year warranty</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Share2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="hover:underline cursor-pointer" onClick={handleShare}>Share this product</span>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Pestañas: Descripción, Detalles, Envío */}
-          <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="shipping">Shipping</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="description" className="pt-4 text-muted-foreground">
-              <p>{product.description || "No description available."}</p>
-              {/* Podrías añadir más contenido aquí si lo tienes */}
-            </TabsContent>
-
-            <TabsContent value="details" className="pt-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex justify-between py-1 border-b">
-                  <span className="text-muted-foreground">Product ID</span>
-                  <span className="font-medium">{product.id}</span>
-                </li>
-                {product.category && (
-                  <li className="flex justify-between py-1 border-b">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="font-medium">{product.category}</span>
-                  </li>
-                )}
-                 {product.vendor && (
-                   <li className="flex justify-between py-1 border-b">
-                     <span className="text-muted-foreground">Vendor</span>
-                     <span className="font-medium">{product.vendor}</span>
-                   </li>
-                 )}
-                {product.productType && (
-                   <li className="flex justify-between py-1 border-b">
-                     <span className="text-muted-foreground">Type</span>
-                     <span className="font-medium">{product.productType}</span>
-                   </li>
-                 )}
-                {product.sku && (
-                  <li className="flex justify-between py-1 border-b">
-                    <span className="text-muted-foreground">SKU</span>
-                    <span className="font-medium">{product.sku}</span>
-                  </li>
-                 )}
-                {product.barcode && (
-                  <li className="flex justify-between py-1 border-b">
-                    <span className="text-muted-foreground">Barcode (GTIN)</span>
-                    <span className="font-medium">{product.barcode}</span>
-                  </li>
-                 )}
-                {product.tags && typeof product.tags === 'string' && product.tags.trim() !== '' && (
-                  <li className="flex flex-col sm:flex-row justify-between py-2 border-b">
-                    <span className="text-muted-foreground mb-1 sm:mb-0">Tags</span>
-                    <div className="flex flex-wrap gap-1 justify-start sm:justify-end">
-                      {product.tags.split(",").map((tag) => tag.trim()).filter(Boolean).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs font-normal">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </li>
-                )}
-                 {/* Puedes añadir más detalles como materiales, peso, dimensiones si los tienes */}
-              </ul>
-            </TabsContent>
-
-            <TabsContent value="shipping" className="pt-4 text-muted-foreground space-y-2">
-              <p><strong>Standard Shipping:</strong> Free on orders over $50. Typically arrives in 3-5 business days.</p>
-              <p><strong>Express Shipping:</strong> Available at checkout for faster delivery (1-2 business days).</p>
-              <p><strong>International Shipping:</strong> Available to select countries. Rates and delivery times vary.</p>
-              <p>Please note: Shipping times may be affected by holidays and carrier delays.</p>
-            </TabsContent>
-          </Tabs>
-          <FAQ />
-        </div> {/* Fin Columna Derecha */}
-      </div> {/* Fin Grid Principal */}
-      <CommentsPage averageRating={typeof rating === 'number' ? rating : 5} />
-    </div> // Fin Container
-  );
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
 }
