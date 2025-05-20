@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useCart } from "@/context/CartContext";
+import { useCartStore } from "@/lib/cartStore";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { ShoppingCartIcon as CartIcon, Plus, Minus } from "lucide-react";
@@ -14,7 +14,10 @@ import {
 } from "@/components/ui/sheet";
 
 export default function ShoppingCart() {
-  const { cartItems, addToCart, removeFromCart } = useCart();
+  const cartItems = useCartStore(state => state.cartItems);
+  const addToCart = useCartStore(state => state.addToCart);
+  const removeFromCart = useCartStore(state => state.removeFromCart);
+
   const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
