@@ -247,7 +247,7 @@ export default function CheckoutPage() {
             localStorage.setItem("orderDetails", JSON.stringify(orderDetails));
 
             const orderId = data.orderId;
-            router.push(`/thankyou?orderId=${orderId}`);
+            router.push(`/thankyou/${orderId}`);
 
         } catch (error: any) {
             console.error("Error en el pago con saldo:", error);
