@@ -23,7 +23,7 @@ import { ChevronDown, HelpCircle, Info, ChevronUp } from "lucide-react";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ContactForm from "@/components/contact-form";
-import PhoneInput from 'react-phone-input-2';
+//import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import ReactCountryFlag from "react-country-flag";
 
@@ -540,15 +540,13 @@ export default function CheckoutPage() {
                                         {/* Phone */}
                                         <div>
                                             <Label htmlFor="phone" className="sr-only">Teléfono (opcional)</Label>
-                                            <PhoneInput
-                                                country={'co'}
+                                            <Input
+                                                id="phone"
+                                                name="phone"
+                                                type="tel"
+                                                placeholder="Teléfono (opcional)"
                                                 value={deliveryInfo.phone}
-                                                onChange={(phone) => handleDeliveryInfoChange('phone', phone)}
-                                                inputProps={{
-                                                    name: 'phone',
-                                                    required: false,
-                                                    autoFocus: false,
-                                                }}
+                                                onChange={(e) => handleDeliveryInfoChange('phone', e.target.value)}
                                             />
                                         </div>
                                         {/* Código Postal */}
