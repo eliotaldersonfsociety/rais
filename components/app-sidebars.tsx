@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-export function AppSidebar() {
+export function AppSidebars() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [openSubmenu, setOpenSubmenu] = useState(false)
