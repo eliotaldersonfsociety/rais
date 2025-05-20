@@ -54,7 +54,7 @@ export function AppSidebars() {
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
-        <Link href="/dashboard" className="flex items-center">
+        <Link href="/panel" className="flex items-center">
           <Image
             src="/tsb.png"
             alt="Logo"
@@ -70,7 +70,7 @@ export function AppSidebars() {
         <div className="container mx-auto">
           <nav className="flex items-center justify-between h-14">
             <div className="flex items-center gap-6">
-              <Link href="/dashboard" className="flex items-center">
+              <Link href="/panel" className="flex items-center">
                 <Image
                   src="/tsb.png"
                   alt="Logo"
@@ -117,7 +117,7 @@ export function AppSidebars() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <Link href="/dashboard" className="flex items-center">
+              <Link href="/panel" className="flex items-center">
                 <Image
                   src="/tsb.png"
                   alt="Logo"
