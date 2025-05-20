@@ -1,6 +1,6 @@
 'use client';
 
-import { DashboardLayout } from "@/components/dashboard-layouts";
+import { DashboardLayouts } from "@/components/dashboard-layouts";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -172,7 +172,7 @@ export default function PanelPage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayouts>
       {hayProductosInvalidos ? (
         <div className="p-8 text-center text-red-600 font-bold text-xl">
           Error: productos inválidos en tu carrito.
@@ -292,6 +292,6 @@ export default function PanelPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </DashboardLayouts>
   );
 }
