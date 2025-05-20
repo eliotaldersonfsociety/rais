@@ -23,8 +23,8 @@ import { ChevronDown, HelpCircle, Info, ChevronUp } from "lucide-react";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ContactForm from "@/components/contact-form";
-//import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import ReactCountryFlag from "react-country-flag";
 
 // Interface for the data structure returned by your /api/generatetoken endpoint
@@ -540,13 +540,12 @@ export default function CheckoutPage() {
                                         {/* Phone */}
                                         <div>
                                             <Label htmlFor="phone" className="sr-only">Teléfono (opcional)</Label>
-                                            <Input
-                                                id="phone"
-                                                name="phone"
-                                                type="tel"
-                                                placeholder="Teléfono (opcional)"
+                                            <PhoneInput
+                                                international
+                                                defaultCountry="CO"
                                                 value={deliveryInfo.phone}
-                                                onChange={(e) => handleDeliveryInfoChange('phone', e.target.value)}
+                                                onChange={(value) => handleDeliveryInfoChange('phone', value || '')}
+                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             />
                                         </div>
                                         {/* Código Postal */}
