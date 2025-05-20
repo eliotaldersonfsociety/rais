@@ -6,7 +6,7 @@ import Image from "next/image";
 import { ChevronDown, Flame, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCart } from "@/context/CartContext";
+import { useCartStore } from "@/lib/cartStore";
 
 interface Product {
   id: number;
@@ -42,7 +42,7 @@ export default function HotProductsBanner() {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addToCart } = useCart();
+  const addToCart = useCartStore(state => state.addToCart);
 
   useEffect(() => {
     const loadProducts = async () => {
