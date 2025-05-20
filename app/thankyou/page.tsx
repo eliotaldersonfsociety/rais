@@ -1,16 +1,11 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import ThankYouRedirect from "@/components/ThankYouRedirect";
 
-export default function ThankYouRedirect() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    // Construye la nueva URL manteniendo los query params
-    const params = searchParams.toString();
-    router.replace(`/thankyou/ok${params ? "?" + params : ""}`);
-  }, [router, searchParams]);
-
-  return null; // O un loader si quieres
+export default function ThankYouPage() {
+  return (
+    <Suspense>
+      <ThankYouRedirect />
+    </Suspense>
+  );
 }
