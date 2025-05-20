@@ -14,7 +14,7 @@ import Link from "next/link"
 import { ArrowLeft, ImagePlus, Trash } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2 } from "lucide-react"
-import { DashboardLayout } from "@/components/dashboard-layouts"
+import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { useToast } from "@/hooks/use-toast"
 
 interface Product {
@@ -345,7 +345,7 @@ export default function NewProduct() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayouts>
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container flex h-16 items-center px-4 sm:px-6">
@@ -838,6 +838,6 @@ export default function NewProduct() {
         </div>
       </main>
     </div>
-    </DashboardLayout>
+    </DashboardLayouts>
   )
 }
