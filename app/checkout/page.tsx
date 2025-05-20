@@ -538,7 +538,7 @@ export default function CheckoutPage() {
                                     {/* Phone and Postal Code Fields */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Phone */}
-                                        <div>
+                                        <div className="mb-4">
                                             <Label htmlFor="phone" className="sr-only">Teléfono (opcional)</Label>
                                             <PhoneInput
                                                 international
