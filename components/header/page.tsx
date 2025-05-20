@@ -6,6 +6,7 @@ import Image from "next/image";
 import { MenuIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useCartStore } from "@/lib/cartStore"; // ✅ Nuevo import
 
 import SearchBar from "@/components/header/search-bar";
 import UserMenu from "@/components/header/user-menu";
@@ -13,13 +14,14 @@ import ShoppingCart from "@/components/header/shopping-cart";
 import NavigationMenu from "@/components/header/navigation-menu";
 import HotProductsBanner from "@/components/header/hot-products-banner";
 import OffersBanner from "@/components/header/offers-banner";
-import { useCart } from "@/context/CartContext"; // 👈 tienes que importarlo
 import CountdownTimer from "@/components/countdown-timer";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isSignedIn, user } = useUser();
-  const { cartItems, addToCart, removeFromCart } = useCart(); // 👈 necesitas destructurarlo
+  const cartItems = useCartStore(state => state.cartItems);
+  const addToCart = useCartStore(state => state.addToCart);
+  const removeFromCart = useCartStore(state => state.removeFromCart);
   const pathname = usePathname();
   const isProductPage = /^\/product\/[^/]+$/.test(pathname);
 
