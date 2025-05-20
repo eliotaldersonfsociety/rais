@@ -1,6 +1,7 @@
 "use client"; // Asegúrate de que esta directiva esté si es necesaria
 
-import { useCart } from "@/context/CartContext";
+import { useCartStore } from "@/lib/cartStore";
+import { useWishlistStore } from "@/lib/wishlistStore";
 import Image from "next/image";
 import { Minus, Plus, ShoppingCart, Heart, Share2, Truck, RotateCcw, Shield } from "lucide-react";
 // Importa useState para los estados locales
@@ -12,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useWishlist } from "@/context/WishlistContext"; // Asegúrate que la ruta sea correcta
 import { toast } from "react-toastify";
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -57,8 +57,8 @@ const getRandomReviews = () => Math.floor(Math.random() * (107 - 23 + 1)) + 23;
 export default function ProductDisplay({ product }: { product: Product }) {
   console.log("Datos COMPLETOS del producto recibidos:", JSON.stringify(product, null, 2));
   console.log(">>> Tipo de product.quantity:", typeof product.quantity, "|| Valor:", product.quantity);
-  // Hooks de contexto para carrito y lista de deseos
-  const { addToCart } = useCart();
+  // Hooks de Zustand para carrito y wishlist
+  const addToCart = useCartStore(state => state.addToCart);
   const {
     addToWishlist,
     removeFromWishlist,
@@ -66,7 +66,7 @@ export default function ProductDisplay({ product }: { product: Product }) {
     isProductInWishlist,
     setWishlist,
     fetchWishlist
-  } = useWishlist();
+  } = useWishlistStore();
   const { isSignedIn, isLoaded, user } = useUser();
 
   // Estados locales del componente
