@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect } from "react"
-import { DashboardLayout } from "@/components/dashboard-layouts"
+import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
@@ -290,7 +290,7 @@ export default function PurchasesPage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayouts>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold">Mis Compras</h2>
@@ -422,6 +422,6 @@ export default function PurchasesPage() {
           onClose={() => setIsModalOpen(false)} 
         />
       )}
-    </DashboardLayout>
+    </DashboardLayouts>
   );
 }
