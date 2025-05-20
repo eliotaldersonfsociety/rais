@@ -2,18 +2,18 @@
 
 import { ReactNode, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useCart } from "@/context/CartContext";
+import { useCartStore } from "@/lib/cartStore";
 
 const ClientCartProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
-  const { clearCart } = useCart();
+  const clearCart = useCartStore(state => state.clearCart);
 
   useEffect(() => {
     if (pathname === "/thx" || pathname === "/thankyou") {
       clearCart();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);  // ya no incluimos clearCart aquí
+  }, [pathname]);
 
   return <>{children}</>;
 };
