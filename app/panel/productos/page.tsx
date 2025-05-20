@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/productcard/page";
 import { Product } from "@/types/product";
-import { DashboardLayout } from "@/components/dashboard-layouts";
+import { DashboardLayouts } from "@/components/dashboard-layouts";
 
 export default async function ProductsPage() {
   const res = await fetch("http://localhost:3000/api/products", { cache: "no-store" });
@@ -10,7 +10,7 @@ export default async function ProductsPage() {
   const products = await res.json() as Product[];
 
   return (
-    <DashboardLayout>
+    <DashboardLayouts>
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Productos</h1>
@@ -34,6 +34,6 @@ export default async function ProductsPage() {
         </div>
       )}
     </div>
-    </DashboardLayout>
+    </DashboardLayouts>
   );
 }
