@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-import { AppSidebar } from "./app-sidebars"
+import { AppSidebars } from "./app-sidebars"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayouts({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <AppSidebar />
