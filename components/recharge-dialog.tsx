@@ -19,7 +19,7 @@ type User = {
   id: string
   name: string
   email: string
-  balance: number
+  saldo: number
 }
 
 interface RechargeDialogProps {
@@ -80,7 +80,7 @@ export function RechargeDialog({ user, open, onOpenChange, onRecharge }: Recharg
                 Saldo Actual
               </Label>
               <div className="col-span-3">
-                <p className="text-sm font-medium">${user.balance.toFixed(2)}</p>
+                <p className="text-sm font-medium">${user.saldo.toFixed(2)}</p>
               </div>
             </div>
 
