@@ -187,6 +187,12 @@ export default function PanelPage() {
     }
   };
 
+  console.log("user", user);
+  console.log("isLoaded", isLoaded);
+  console.log("purchases", purchases);
+  console.log("lastWishlistId", lastWishlistId);
+  console.log("saldo", saldo);
+
   return (
     <DashboardLayouts>
       {hayProductosInvalidos ? (
