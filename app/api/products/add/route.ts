@@ -8,10 +8,14 @@ import { productsTable } from "@/lib/products/schema";
 
 // Esquemas Zod para validación
 const insertProductSchema = createInsertSchema(productsTable).extend({
+  images: z.union([z.string(), z.array(z.string())]),
   sizes: z.array(z.string()).nullable(),
-  sizeRange: z.object({ min: z.number(), max: z.number() }).nullable(),
+  size_range: z.string(),
   colors: z.array(z.string()).nullable(),
   status: z.union([z.string(), z.number()]).optional().default("draft"),
+  compare_at_price: z.number().optional(),
+  cost_per_item: z.number().optional(),
+  product_type: z.string().optional(),
 });
 const selectProductSchema = createSelectSchema(productsTable);
 
@@ -74,11 +78,13 @@ export async function POST(req: NextRequest) {
       .insert(productsTable)
       .values({
         ...data,
-        images: JSON.stringify(data.images ?? []),        // si `images` es un string[], serialízalo
+        images: JSON.stringify(data.images ?? []),
         sizes: JSON.stringify(data.sizes ?? []),
         colors: JSON.stringify(data.colors ?? []),
-        size_range: JSON.stringify(data.sizeRange ?? {}),
         status: numericStatus,
+        compare_at_price: data.compare_at_price,
+        cost_per_item: data.cost_per_item,
+        product_type: data.product_type,
       })
       .returning();
 
