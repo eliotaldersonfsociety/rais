@@ -10,7 +10,7 @@ import { useUser } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCartStore } from "@/lib/cartStore";
 import { useBalanceStore } from "@/lib/balanceStore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,7 @@ export default function CheckoutPage() {
     const fetchUserSaldo = useBalanceStore(state => state.fetchUserSaldo);
     const { isSignedIn, isLoaded, user } = useUser();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     // LOGS DE DEPURACIÓN EN EL RENDER
     console.log('RENDER: isLoaded:', isLoaded);
@@ -170,6 +171,12 @@ export default function CheckoutPage() {
         }
     }, [isSignedIn, user, fetchUserSaldo]);
 
+    useEffect(() => {
+        if (isSignedIn && user?.id) {
+            fetchUserSaldo(user.id, isSignedIn);
+        }
+    }, [isSignedIn, user, fetchUserSaldo]);
+
     // Handlers
     const handleDeliveryInfoChange = (field: keyof DeliveryInfo, value: string | boolean) => {
         setDeliveryInfo(prev => ({ ...prev, [field]: value }));
@@ -223,7 +230,7 @@ export default function CheckoutPage() {
             }
 
             toast.success("¡Pago procesado con éxito con tu saldo!");
-            fetchUserSaldo();
+            fetchUserSaldo(user.id, isSignedIn);
 
             // Guardar datos en localStorage
             const orderDetails = {
