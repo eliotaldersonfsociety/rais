@@ -5,7 +5,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"; // shadcn path
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCartStore } from "@/lib/cartStore";
@@ -81,7 +81,7 @@ function envioIncompleto(deliveryInfo: DeliveryInfo) {
     );
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
     const cartItems = useCartStore(state => state.cartItems);
     const clearCart = useCartStore(state => state.clearCart);
     const userSaldo = useBalanceStore(state => state.userSaldo);
@@ -767,5 +767,13 @@ export default function CheckoutPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function CheckoutPage() {
+    return (
+        <Suspense fallback={<div>Cargando...</div>}>
+            <CheckoutContent />
+        </Suspense>
     );
 }
