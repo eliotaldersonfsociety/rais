@@ -1,10 +1,8 @@
 // app/checkout/layout.tsx
-import { UserBalanceProvider } from "@/context/balance";
+// Ya no es necesario importar el UserBalanceProvider
 
 export default function CheckoutLayout({ children }: { children: React.ReactNode }) {
   return (
-    <UserBalanceProvider>
-      {children}
-    </UserBalanceProvider>
+    <>{children}</>
   );
 }
