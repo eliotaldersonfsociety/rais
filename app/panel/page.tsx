@@ -36,6 +36,7 @@ export default function PanelPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [saldo, setSaldo] = useState<number | null>(null);
+  const [comprasPendientes, setComprasPendientes] = useState<any[]>([]);
   const purchasesPerPage = 5;
 
   useEffect(() => {
@@ -56,7 +57,10 @@ export default function PanelPage() {
               products: typeof purchase.products === 'string' ? JSON.parse(purchase.products) : purchase.products,
             }));
             setPurchases(purchasesFixed);
-            localStorage.setItem('compras_pendientes', JSON.stringify(purchasesFixed));
+            if (typeof window !== "undefined") {
+              localStorage.setItem('compras_pendientes', JSON.stringify(purchasesFixed));
+              setComprasPendientes(purchasesFixed);
+            }
           }
         })
         .catch(error => {
@@ -64,9 +68,11 @@ export default function PanelPage() {
         });
   
       // WISHLIST: 1. Intentar cargar de localStorage
-      const localWishlistId = localStorage.getItem('dashboard_lastWishlistId');
-      if (localWishlistId) {
-        setLastWishlistId(Number(localWishlistId));
+      if (typeof window !== "undefined") {
+        const localWishlistId = localStorage.getItem('dashboard_lastWishlistId');
+        if (localWishlistId) {
+          setLastWishlistId(Number(localWishlistId));
+        }
       }
   
       // WISHLIST: 2. Hacer fetch a la API
@@ -75,8 +81,9 @@ export default function PanelPage() {
         .then(data => {
           if (data.lastWishlistId) {
             setLastWishlistId(data.lastWishlistId);
-            // 3. Guardar en localStorage
-            localStorage.setItem('dashboard_lastWishlistId', data.lastWishlistId);
+            if (typeof window !== "undefined") {
+              localStorage.setItem('dashboard_lastWishlistId', data.lastWishlistId);
+            }
           }
         })
         .catch(error => {
@@ -84,10 +91,12 @@ export default function PanelPage() {
         });
   
       // SALDO: 1. Intentar cargar de localStorage
-      const localSaldo = localStorage.getItem('dashboard_saldo');
-      if (localSaldo) {
-        setSaldo(Number(localSaldo));
-        setLoading(false);
+      if (typeof window !== "undefined") {
+        const localSaldo = localStorage.getItem('dashboard_saldo');
+        if (localSaldo) {
+          setSaldo(Number(localSaldo));
+          setLoading(false);
+        }
       }
   
       // SALDO: 2. Hacer fetch a la API
@@ -102,8 +111,9 @@ export default function PanelPage() {
         .then(data => {
           if (data.saldo !== undefined) {
             setSaldo(data.saldo);
-            // 3. Guardar en localStorage
-            localStorage.setItem('dashboard_saldo', data.saldo);
+            if (typeof window !== "undefined") {
+              localStorage.setItem('dashboard_saldo', data.saldo);
+            }
           }
           setLoading(false);
         })
@@ -111,8 +121,16 @@ export default function PanelPage() {
           console.error('Error al obtener el saldo:', error);
           setLoading(false);
         });
+
+      // Cargar comprasPendientes de localStorage si existe
+      if (typeof window !== "undefined") {
+        const compras = localStorage.getItem('compras_pendientes');
+        if (compras) {
+          setComprasPendientes(JSON.parse(compras));
+        }
+      }
     }
-  }, [user]);
+  }, [user, isLoaded]);
 
   if (!isLoaded) return <div>Cargando...</div>;
   if (!user) return <div>No estás autenticado</div>;
@@ -151,8 +169,6 @@ export default function PanelPage() {
       toast.error("Hay productos inválidos en tu carrito. Por favor, actualiza tu carrito.");
     }
   }, [hayProductosInvalidos]);
-
-  const comprasPendientes = JSON.parse(localStorage.getItem('compras_pendientes') || '[]');
 
   const handleInternalBalancePayment = async () => {
     setLoading(true);
