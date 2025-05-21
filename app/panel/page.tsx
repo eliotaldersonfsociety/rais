@@ -1,9 +1,9 @@
 'use client';
 
-import { DashboardLayout } from "@/components/dashboard-layout";
+import { DashboardLayouts } from "@/components/dashboard-layouts";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,6 +29,7 @@ interface Purchase {
 }
 
 export default function PanelPage() {
+  // TODOS los hooks aquí, sin returns antes
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -49,8 +50,12 @@ export default function PanelPage() {
     if (user && user.publicMetadata?.isAdmin) {
       // Obtener compras
       fetch('/api/pagos/numerodepagos')
-        .then(response => response.json())
+        .then(response => {
+          console.log('Response from /api/pagos/numerodepagos:', response);
+          return response.json();
+        })
         .then(data => {
+          console.log('Data from /api/pagos/numerodepagos:', data);
           if (data.purchases) {
             const purchasesFixed = data.purchases.map((purchase: any) => ({
               ...purchase,
@@ -66,7 +71,7 @@ export default function PanelPage() {
         .catch(error => {
           console.error('Error al obtener las compras:', error);
         });
-  
+
       // WISHLIST: 1. Intentar cargar de localStorage
       if (typeof window !== "undefined") {
         const localWishlistId = localStorage.getItem('dashboard_lastWishlistId');
@@ -74,11 +79,15 @@ export default function PanelPage() {
           setLastWishlistId(Number(localWishlistId));
         }
       }
-  
+
       // WISHLIST: 2. Hacer fetch a la API
       fetch('/api/wishlist/numero')
-        .then(response => response.json())
+        .then(response => {
+          console.log('Response from /api/wishlist/numero:', response);
+          return response.json();
+        })
         .then(data => {
+          console.log('Data from /api/wishlist/numero:', data);
           if (data.lastWishlistId) {
             setLastWishlistId(data.lastWishlistId);
             if (typeof window !== "undefined") {
@@ -89,7 +98,7 @@ export default function PanelPage() {
         .catch(error => {
           console.error('Error al obtener el último ID de la wishlist:', error);
         });
-  
+
       // SALDO: 1. Intentar cargar de localStorage
       if (typeof window !== "undefined") {
         const localSaldo = localStorage.getItem('dashboard_saldo');
@@ -98,7 +107,7 @@ export default function PanelPage() {
           setLoading(false);
         }
       }
-  
+
       // SALDO: 2. Hacer fetch a la API
       fetch('/api/balance', {
         method: 'POST',
@@ -107,8 +116,12 @@ export default function PanelPage() {
         },
         body: JSON.stringify({ userId: user.id }),
       })
-        .then(response => response.json())
+        .then(response => {
+          console.log('Response from /api/balance:', response);
+          return response.json();
+        })
         .then(data => {
+          console.log('Data from /api/balance:', data);
           if (data.saldo !== undefined) {
             setSaldo(data.saldo);
             if (typeof window !== "undefined") {
@@ -132,13 +145,10 @@ export default function PanelPage() {
     }
   }, [user, isLoaded]);
 
-  if (!isLoaded) return <div>Cargando...</div>;
-  if (!user) return <div>No estás autenticado</div>;
-  if (!user.publicMetadata?.isAdmin) return <div>No tienes acceso a este panel.</div>;
-
-  const name = user.firstName || '';
-  const lastname = user.lastName || '';
-  const email = user.primaryEmailAddress?.emailAddress || '';
+  console.log('Before memo calculations');
+  const name = user?.firstName || '';
+  const lastname = user?.lastName || '';
+  const email = user?.primaryEmailAddress?.emailAddress || '';
 
   const lastPurchaseId = purchases.length > 0 ? purchases[0].id : 'N/A';
   const lastPurchaseDate = purchases.length > 0 ? new Date(purchases[0].created_at).toLocaleDateString() : 'N/A';
@@ -150,27 +160,38 @@ export default function PanelPage() {
   const totalPages = Math.ceil(purchases.length / purchasesPerPage);
 
   const handleNextPage = () => {
+    console.log('handleNextPage called');
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
   };
 
   const handlePrevPage = () => {
+    console.log('handlePrevPage called');
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
 
-  const productosValidos = currentPurchases.map(purchase => purchase.products).flat().filter(item => !!item.id && !isNaN(Number(item.id)));
-  const hayProductosInvalidos = productosValidos.length !== currentPurchases.map(purchase => purchase.products).flat().length;
+  const productosValidos = useMemo(() =>
+    currentPurchases.map(purchase => purchase.products).flat().filter(item => !!item.id && !isNaN(Number(item.id))),
+    [currentPurchases]
+  );
+  const hayProductosInvalidos = useMemo(() =>
+    productosValidos.length !== currentPurchases.map(purchase => purchase.products).flat().length,
+    [productosValidos, currentPurchases]
+  );
 
+  console.log('Before useEffect 3');
   useEffect(() => {
+    console.log('Inside useEffect 3');
     if (hayProductosInvalidos) {
       toast.error("Hay productos inválidos en tu carrito. Por favor, actualiza tu carrito.");
     }
   }, [hayProductosInvalidos]);
 
   const handleInternalBalancePayment = async () => {
+    console.log('handleInternalBalancePayment called');
     setLoading(true);
     try {
       // ... tu lógica de pago ...
@@ -187,14 +208,14 @@ export default function PanelPage() {
     }
   };
 
-  console.log("user", user);
-  console.log("isLoaded", isLoaded);
-  console.log("purchases", purchases);
-  console.log("lastWishlistId", lastWishlistId);
-  console.log("saldo", saldo);
+  // AHORA SÍ, los returns condicionales
+  if (!isLoaded) return <div>Cargando...</div>;
+  if (!user) return <div>No estás autenticado</div>;
+  if (!user.publicMetadata?.isAdmin) return <div>No tienes acceso a este panel.</div>;
 
+  // Ahora sí, el return principal
   return (
-    <DashboardLayout>
+    <DashboardLayouts>
       {hayProductosInvalidos ? (
         <div className="p-8 text-center text-red-600 font-bold text-xl">
           Error: productos inválidos en tu carrito.
@@ -258,7 +279,6 @@ export default function PanelPage() {
                       <li key={purchase.id} className="mt-4 border-b pb-4">
                         <div className="text-sm font-medium space-y-2">
                           {purchase.products.map(product => {
-                            console.log('Imagen producto:', product.name, product.image);
                             return (
                               <div key={product.id} className="flex items-center gap-3">
                                 <img
@@ -314,6 +334,6 @@ export default function PanelPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </DashboardLayouts>
   );
 }
