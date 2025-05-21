@@ -8,8 +8,8 @@ import {
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCart } from "@/context/CartContext";
-import { useUserBalance } from "@/context/balance";
+import { useCartStore } from "@/lib/cartStore";
+import { useBalanceStore } from "@/lib/balanceStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -82,8 +82,10 @@ function envioIncompleto(deliveryInfo: DeliveryInfo) {
 }
 
 export default function CheckoutPage() {
-    const { userSaldo, fetchUserSaldo } = useUserBalance();
-    const { cartItems, clearCart } = useCart();
+    const cartItems = useCartStore(state => state.cartItems);
+    const clearCart = useCartStore(state => state.clearCart);
+    const userSaldo = useBalanceStore(state => state.userSaldo);
+    const fetchUserSaldo = useBalanceStore(state => state.fetchUserSaldo);
     const { isSignedIn, isLoaded, user } = useUser();
     const router = useRouter();
 
@@ -131,7 +133,7 @@ export default function CheckoutPage() {
     const [open, setOpen] = useState(false);
 
     // Calculations
-    const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const totalPrice = cartItems.reduce((sum: number, item: typeof cartItems[0]) => sum + item.price * item.quantity, 0);
     const tax = totalPrice * 0.19;
     const tip = tipAmount && tipAmount !== "none" ? totalPrice * (parseInt(tipAmount) / 100) : 0;
     const grandTotal = totalPrice + tax + tip;
@@ -199,7 +201,7 @@ export default function CheckoutPage() {
                 shipping: 0,
                 taxes: tax,
                 total: grandTotal,
-                productos: cartItems.map(item => item),
+                productos: cartItems.map((item: typeof cartItems[0]) => item),
                 type: "saldo",
                 // Agrega aquí los datos de envío:
                 address: deliveryInfo.address,
@@ -274,7 +276,7 @@ export default function CheckoutPage() {
             taxReturnBase: totalPrice.toFixed(2),
             currency: currency,
             referenceCode,
-            description: `Compra: ${cartItems.map(i => `${i.quantity}x ${i.name}`).join(", ")}`,
+            description: `Compra: ${cartItems.map((i: typeof cartItems[0]) => `${i.quantity}x ${i.name}`).join(", ")}`,
             buyerEmail: deliveryInfo.email!,
             buyerFullName: `${deliveryInfo.firstname} ${deliveryInfo.lastname}`.trim(),
             telephone: deliveryInfo.phone!,
@@ -285,7 +287,7 @@ export default function CheckoutPage() {
             postalCode: deliveryInfo.postal!,
             responseUrl: `${window.location.origin}/thankyou`,
             confirmationUrl: `https://08b1-190-250-217-188.ngrok-free.app/api/update-payment-status`,
-            cartItems: cartItems.map(item => ({
+            cartItems: cartItems.map((item: typeof cartItems[0]) => ({
                 id: Number(item.id),
                 name: item.name,
                 quantity: Number(item.quantity),
@@ -685,7 +687,7 @@ export default function CheckoutPage() {
                     ) : (
                         <>
                             <div className="max-h-[40vh] overflow-y-auto pr-2 mb-4 border-b pb-2 space-y-4"> {/* Scrollable items */}
-                                {cartItems.map((item) => (
+                                {cartItems.map((item: typeof cartItems[0]) => (
                                     <div key={`${item.id}-${item.size}-${item.color}`} className="flex items-start gap-3">
                                         <div className="relative flex-shrink-0">
                                             <div className="w-16 h-16 bg-white rounded border flex items-center justify-center overflow-hidden">
