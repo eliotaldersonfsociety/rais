@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { WishlistProvider } from "@/context/WishlistContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Header from "@/components/header/page";
 import Footer from "@/components/footer/page";
-import { CartProvider } from "@/context/CartContext";
-import { UserBalanceProvider } from "@/context/balance";
 import { UpdateHeaderHeight } from "@/components/UpdateHeaderHeight";
 import ClientCartProvider from "@/components/cart";
 import PageViewTracker from "@/components/PageViewTracker";
@@ -40,17 +37,13 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <PageViewTracker />
-            <CartProvider>
-              <WishlistProvider>
-                <ClientCartProvider>
-                  <UpdateHeaderHeight />
-                  <Header />
-                    {children}
-                  <Footer />
-                  <ToastContainer position="top-right" autoClose={3000} />
-                </ClientCartProvider>
-              </WishlistProvider>
-            </CartProvider>
+          <ClientCartProvider>
+            <UpdateHeaderHeight />
+            <Header />
+            {children}
+            <Footer />
+            <ToastContainer position="top-right" autoClose={3000} />
+          </ClientCartProvider>
         </body>
       </html>
     </ClerkProvider>
