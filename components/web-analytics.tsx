@@ -80,7 +80,8 @@ export default function WebAnalytics() {
   }, [])
 
   // Función para formatear números grandes
-  const formatNumber = (number: number) => {
+  const formatNumber = (number: number | undefined | null) => {
+    if (typeof number !== "number" || isNaN(number)) return "0";
     if (number >= 1000000) {
       return (number / 1000000).toFixed(1) + "M"
     } else if (number >= 1000) {
@@ -94,13 +95,13 @@ export default function WebAnalytics() {
   // Prepara los datos para el gráfico de rutas más visitadas
   const pageData = Object.entries(stats.locations || {}).map(([name, visits]) => ({
     name,
-    visits: Number(visits),
+    visits: Number(visits) || 0,
   }));
 
   // Prepara los datos para la gráfica de países
   const countryData = Object.entries(stats.devices || {}).map(([name, visits]) => ({
     name,
-    visits: Number(visits),
+    visits: Number(visits) || 0,
   }));
 
   return (
@@ -120,13 +121,13 @@ export default function WebAnalytics() {
           <Card className="md:col-span-3">
             <CardHeader>
               <CardTitle>Total de Visitas</CardTitle>
-              <CardDescription>{formatNumber(stats.visits)} visitas en total</CardDescription>
+              <CardDescription>{formatNumber(stats?.visits ?? 0)} visitas en total</CardDescription>
             </CardHeader>
             <CardContent>
               <TabsContent value="anual" className="mt-0">
                 <div className="w-full h-[220px] sm:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: "Visitas", visitas: stats.visits }]}
+                    <BarChart data={[{ name: "Visitas", visitas: stats?.visits ?? 0 }]}
                       margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" />
@@ -178,7 +179,14 @@ export default function WebAnalytics() {
                     <YAxis type="category" dataKey="name" width={100} />
                     <Bar dataKey="visits" fill="#ffc658">
                       {countryData.map((entry, index) => {
+                        const ip = entry.name;
                         let country = "Desconocido";
+                        try {
+                          const geo = geoip.lookup(ip);
+                          if (geo && geo.country) country = geo.country;
+                        } catch (e) {
+                          console.log("[VISITAS] Error geoip para IP:", ip, e);
+                        }
                         return (
                           <Cell key={`cell-country-${index}`} fill={COLORS[index % COLORS.length]} />
                         );
