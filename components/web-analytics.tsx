@@ -179,14 +179,14 @@ export default function WebAnalytics() {
                     <YAxis type="category" dataKey="name" width={100} />
                     <Bar dataKey="visits" fill="#ffc658">
                       {countryData.map((entry, index) => {
-                        const ip = entry.name;
-                        let country = "Desconocido";
-                        try {
-                          const geo = geoip.lookup(ip);
-                          if (geo && geo.country) country = geo.country;
-                        } catch (e) {
-                          console.log("[VISITAS] Error geoip para IP:", ip, e);
-                        }
+                        // const ip = entry.name;
+                        // let country = "Desconocido";
+                        // try {
+                        //   const geo = geoip.lookup(ip);
+                        //   if (geo && geo.country) country = geo.country;
+                        // } catch (e) {
+                        //   console.log("[VISITAS] Error geoip para IP:", ip, e);
+                        // }
                         return (
                           <Cell key={`cell-country-${index}`} fill={COLORS[index % COLORS.length]} />
                         );
