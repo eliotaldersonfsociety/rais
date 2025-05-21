@@ -11,7 +11,7 @@ type User = {
   id: string
   name: string
   email: string
-  balance: number
+  saldo: number
   lastRecharge?: string
 }
 
@@ -27,11 +27,13 @@ export function UserBalanceTable() {
       setLoading(true);
       const response = await fetch('/api/users');
       let data = await response.json();
-      // Mapea saldo a balance
+      console.log("Usuarios crudos desde API:", data);
       data = data.map((user: any) => ({
         ...user,
-        balance: typeof user.saldo === "string" ? parseFloat(user.saldo) : Number(user.saldo) || 0,
+        name: `${user.first_name} ${user.last_name}`,
+        saldo: Number(user.saldo) || 0,
       }));
+      console.log("Usuarios mapeados (saldo como número):", data);
       setUsers(data);
       setLoading(false);
     };
@@ -47,12 +49,15 @@ export function UserBalanceTable() {
       body: JSON.stringify({ amount }),
     });
     if (response.ok) {
-      // Refresca la lista de usuarios y mapea saldo a balance
-      let updatedUsers = await fetch('/api/users').then(res => res.json());
+      const res = await fetch('/api/users');
+      let updatedUsers = await res.json();
+      console.log("Usuarios después de recarga (crudos):", updatedUsers);
       updatedUsers = updatedUsers.map((user: any) => ({
         ...user,
-        balance: typeof user.saldo === "string" ? parseFloat(user.saldo) : Number(user.saldo) || 0,
+        name: `${user.first_name} ${user.last_name}`,
+        saldo: Number(user.saldo) || 0,
       }));
+      console.log("Usuarios después de recarga (mapeados):", updatedUsers);
       setUsers(updatedUsers);
     }
     setLoading(false);
@@ -61,9 +66,13 @@ export function UserBalanceTable() {
 
   // Función para abrir el diálogo de recarga
   const openRechargeDialog = (user: User) => {
-    setSelectedUser(user)
-    setRechargeDialogOpen(true)
-  }
+    console.log("Usuario seleccionado para recarga:", user);
+    setSelectedUser({
+      ...user,
+      saldo: Number(user.saldo) || 0,
+    });
+    setRechargeDialogOpen(true);
+  };
 
   // Función para refrescar la lista de usuarios
   const refreshUsers = async () => {
@@ -72,7 +81,8 @@ export function UserBalanceTable() {
     let data = await response.json();
     data = data.map((user: any) => ({
       ...user,
-      balance: typeof user.saldo === "string" ? parseFloat(user.saldo) : Number(user.saldo) || 0,
+      name: `${user.first_name} ${user.last_name}`,
+      saldo: typeof user.saldo === "string" ? parseFloat(user.saldo) : Number(user.saldo) || 0,
     }));
     setUsers(data);
     setLoading(false);
@@ -127,7 +137,10 @@ export function UserBalanceTable() {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell className="text-right">${user.balance.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    {console.log("Render saldo:", user.saldo, typeof user.saldo)}
+                    ${Number(user.saldo).toFixed(2)}
+                  </TableCell>
                   <TableCell>{user.lastRecharge || "No hay recargas"}</TableCell>
                   <TableCell className="text-center">
                     <Button variant="outline" size="sm" onClick={() => openRechargeDialog(user)}>
