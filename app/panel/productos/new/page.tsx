@@ -16,48 +16,49 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2 } from "lucide-react"
 import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { useToast } from "@/hooks/use-toast"
+import type { Product } from "@/lib/products/schema"
 
-interface Product {
-  title: string
-  description: string
-  price: string
-  compareAtPrice: string
-  costPerItem: string
-  vendor: string
-  productType: string
-  status: boolean
-  category: string
-  tags: string
-  sku: string
-  barcode: string
-  quantity: number
-  trackInventory: boolean
-  images: string[]
-  sizes: string[]
-  sizeRange: { min: number; max: number }
-  colors: string[]
-}
+type ProductForm = {
+  title: string;
+  description: string;
+  price: string;
+  compare: string;
+  cost_per_item: string;
+  vendor: string;
+  type: string;
+  status: boolean;
+  category: string;
+  tags: string;
+  sku: string;
+  barcode: string;
+  quantity: number;
+  track: boolean;
+  images: string[];
+  sizes: string[];
+  range: { min: number; max: number };
+  colors: string[];
+};
 
-const initialProduct: Product = {
+const initialProduct: ProductForm = {
   title: "",
   description: "",
   price: "",
-  compareAtPrice: "",
-  costPerItem: "",
+  compare: "",
+  cost_per_item: "",
   vendor: "",
-  productType: "",
+  type: "",
   status: true,
   category: "",
   tags: "",
   sku: "",
   barcode: "",
   quantity: 0,
-  trackInventory: false,
+  track: false,
   images: [],
   sizes: [],
-  sizeRange: { min: 18, max: 45 },
+  range: { min: 18, max: 45 },
   colors: [],
-}
+};
 
 const sizeOptions = ["XS", "S", "M", "L", "XL", "XXL"]
 const colorOptions = [
@@ -75,8 +76,19 @@ const colorOptions = [
   { name: "Turquesa", value: "#40E0D0" },
 ]
 
+const camelToSnake = (str: string) =>
+  str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+
+const nameMap = {
+  productType: 'type',
+  trackInventory: 'track',
+  compare: 'compare',
+  range: 'range',
+  // otros mapeos si los necesitas
+};
+
 export default function NewProduct() {
-  const [product, setProduct] = useState<Product>(initialProduct)
+  const [product, setProduct] = useState<ProductForm>(initialProduct)
   const [uploading, setUploading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generatingImage, setGeneratingImage] = useState(false)
@@ -128,8 +140,10 @@ export default function NewProduct() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement
-    setProduct({ ...product, [name]: type === "checkbox" ? checked : value })
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    // Mapeo de nombre camelCase a nombre corto del estado
+    const stateKey = nameMap[name] || name;
+    setProduct(prev => ({ ...prev, [stateKey]: type === "checkbox" ? checked : value }));
   }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,8 +268,8 @@ export default function NewProduct() {
     if (!isNaN(parsedValue)) {
       setProduct((prev) => ({
         ...prev,
-        sizeRange: {
-          ...prev.sizeRange,
+        range: {
+          ...prev.range,
           [name]: parsedValue,
         },
       }))
@@ -293,28 +307,34 @@ export default function NewProduct() {
     }
     setSaving(true);
     try {
+      console.log('[handleSubmit] Estado product antes de payload:', product);
       const payload = {
-        ...product,
+        title: product.title,
+        description: product.description,
         price: Number(product.price),
-        compareAtPrice: Number(product.compareAtPrice),
-        costPerItem: Number(product.costPerItem),
-        quantity: Number(product.quantity),
+        compare_at_price: Number(product.compare),
+        cost_per_item: Number(product.cost_per_item),
+        vendor: product.vendor,
+        product_type: product.type,
         status: product.status ? 1 : 0,
-        trackInventory: product.trackInventory ? 1 : 0,
-        images: product.images && product.images.length > 0 ? product.images : [],
-        sizes: useSizes ? product.sizes : null,
-        sizeRange: useSizeRange ? product.sizeRange : null,
-        colors: useColors ? product.colors : null,
+        category: product.category,
         tags: product.tags,
+        sku: product.sku,
+        barcode: product.barcode,
+        quantity: Number(product.quantity),
+        track_inventory: !!product.track,
+        images: Array.isArray(product.images) ? product.images : [],
+        sizes: Array.isArray(product.sizes) ? product.sizes : [],
+        size_range: product.range ? JSON.stringify(product.range) : "{}",
+        colors: Array.isArray(product.colors) ? product.colors : [],
       };
-      console.log("BODY RECIBIDO:", payload);
+      console.log('[handleSubmit] PAYLOAD FINAL ENVIADO:', payload);
 
       const res = await fetch("/api/products/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      console.log("Respuesta fetch:", res);
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -322,18 +342,18 @@ export default function NewProduct() {
         throw new Error(`Error en la respuesta del servidor: ${res.status} - ${errorText}`);
       }
       const data = await res.json();
-      console.log("Respuesta JSON:", data);
       toast({
         title: "Producto guardado",
         description: "El producto fue guardado exitosamente.",
       });
+      localStorage.removeItem('cached_products');
       setProduct(initialProduct);
       setUseSizes(false);
       setUseSizeRange(false);
       setUseColors(false);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      console.log("Error en el catch:", errorMessage);
+      console.log('[handleSubmit][CATCH] Error:', errorMessage, '| Payload:', product);
       toast({
         title: "Error al guardar el producto",
         description: errorMessage,
@@ -406,8 +426,8 @@ export default function NewProduct() {
                       <Label htmlFor="productType">Tipo de producto</Label>
                       <Select
                         name="productType"
-                        value={product.productType}
-                        onValueChange={(value) => setProduct({ ...product, productType: value })}
+                        value={product.type}
+                        onValueChange={(value) => setProduct({ ...product, type: value })}
                       >
                         <SelectTrigger id="productType">
                           <SelectValue placeholder="Seleccionar tipo" />
@@ -558,8 +578,8 @@ export default function NewProduct() {
                         </span>
                         <Input
                           id="compareAtPrice"
-                          name="compareAtPrice"
-                          value={product.compareAtPrice}
+                          name="compare"
+                          value={product.compare}
                           onChange={handleChange}
                           type="number"
                           step="0.01"
@@ -579,8 +599,8 @@ export default function NewProduct() {
                         </span>
                         <Input
                           id="costPerItem"
-                          name="costPerItem"
-                          value={product.costPerItem}
+                          name="cost_per_item"
+                          value={product.cost_per_item}
                           onChange={handleChange}
                           type="number"
                           step="0.01"
@@ -641,7 +661,7 @@ export default function NewProduct() {
                                 type="number"
                                 min="18"
                                 max="45"
-                                value={product.sizeRange.min}
+                                value={product.range.min}
                                 onChange={handleSizeRangeChange}
                               />
                             </div>
@@ -653,7 +673,7 @@ export default function NewProduct() {
                                 type="number"
                                 min="18"
                                 max="45"
-                                value={product.sizeRange.max}
+                                value={product.range.max}
                                 onChange={handleSizeRangeChange}
                               />
                             </div>
@@ -780,8 +800,8 @@ export default function NewProduct() {
                   <Switch
                     id="trackInventory"
                     name="trackInventory"
-                    checked={product.trackInventory}
-                    onCheckedChange={(checked) => setProduct({ ...product, trackInventory: checked })}
+                    checked={product.track}
+                    onCheckedChange={(checked) => setProduct({ ...product, track: checked })}
                   />
                   <Label htmlFor="trackInventory">Seguimiento de inventario</Label>
                 </div>
@@ -810,7 +830,7 @@ export default function NewProduct() {
                 <div className="space-y-2">
                   <Label>Rango de Tallas (cm)</Label>
                   <p className="text-sm">
-                    {product.sizeRange.min} - {product.sizeRange.max} cm
+                    {product.range.min} - {product.range.max} cm
                   </p>
                 </div>
 
