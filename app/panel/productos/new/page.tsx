@@ -79,7 +79,7 @@ const colorOptions = [
 const camelToSnake = (str: string) =>
   str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
-const nameMap = {
+const nameMap: Record<string, string> = {
   productType: 'type',
   trackInventory: 'track',
   compare: 'compare',
