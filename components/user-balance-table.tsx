@@ -133,23 +133,25 @@ export function UserBalanceTable() {
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell className="text-right">
-                    {console.log("Render saldo:", user.saldo, typeof user.saldo)}
-                    ${Number(user.saldo).toFixed(2)}
-                  </TableCell>
-                  <TableCell>{user.lastRecharge || "No hay recargas"}</TableCell>
-                  <TableCell className="text-center">
-                    <Button variant="outline" size="sm" onClick={() => openRechargeDialog(user)}>
-                      <PlusCircleIcon className="h-4 w-4 mr-2" />
-                      Recargar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              users.map((user) => {
+                console.log("Render saldo:", user.saldo, typeof user.saldo);
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="text-right">
+                      ${Number(user.saldo).toFixed(2)}
+                    </TableCell>
+                    <TableCell>{user.lastRecharge || "No hay recargas"}</TableCell>
+                    <TableCell className="text-center">
+                      <Button variant="outline" size="sm" onClick={() => openRechargeDialog(user)}>
+                        <PlusCircleIcon className="h-4 w-4 mr-2" />
+                        Recargar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
