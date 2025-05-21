@@ -28,6 +28,15 @@ export function UserBalanceTable() {
       const response = await fetch('/api/users');
       let data = await response.json();
       console.log("Usuarios crudos desde API:", data);
+
+      if (!Array.isArray(data)) {
+        // Si hay error, muestra un toast o un mensaje y no intentes mapear
+        console.error("Error al obtener usuarios:", data.error || data);
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+
       data = data.map((user: any) => ({
         ...user,
         name: `${user.first_name} ${user.last_name}`,
