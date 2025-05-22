@@ -121,7 +121,7 @@ export default function PurchasesAdminPage() {
     await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
 
     // 4. Espera 500ms antes de recargar la lista para asegurar que el backend ya guardó el cambio
