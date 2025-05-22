@@ -111,12 +111,21 @@ export default function PurchasesAdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
-    // Espera a que termine la recarga antes de cerrar el modal
+
+    // Recarga la lista y actualiza el objeto seleccionado
+    let updatedPurchases: Purchase[] = [];
     if (activeTab === 'payu') {
       await fetchPurchases(currentPagePayu, 'payu');
+      updatedPurchases = purchases; // Si fetchPurchases es asíncrono y actualiza el estado, podrías necesitar obtener el nuevo array de otra forma
     } else {
       await fetchPurchases(currentPageSaldo, 'saldo');
+      updatedPurchases = purchases;
     }
+
+    // Busca la compra actualizada y actualiza el modal antes de cerrar
+    const updated = updatedPurchases.find(p => p.id === selectedPurchase?.id);
+    if (updated) setSelectedPurchase(updated);
+
     setIsModalOpen(false);
   };
 
