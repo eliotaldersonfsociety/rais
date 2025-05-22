@@ -34,6 +34,7 @@ interface Purchase {
     paymentMethod: number;
     authorizationCode: string;
   };
+  user_id?: string;
 }
 
 export default function PurchasesPage() {
@@ -49,6 +50,7 @@ export default function PurchasesPage() {
   const [lastUpdate, setLastUpdate] = useState<Record<string, number>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const itemsPerPage = 10;
+  const [adminTab, setAdminTab] = useState(false);
 
   // Función para verificar si hay nuevas compras
   const checkForNewPurchases = async (type: 'saldo' | 'payu') => {
@@ -103,73 +105,44 @@ export default function PurchasesPage() {
     return null;
   };
 
-  const fetchPurchases = async (page: number, type: 'saldo' | 'payu', forceRefresh = false) => {
-    if (!isSignedIn || !user) return;
-    try {
-      setLoading(true);
-      // Si no es forzado, intentar obtener del localStorage primero
-      if (!forceRefresh) {
-        const cachedData = getFromLocalStorage(type);
-        if (cachedData) {
-          setPurchases(cachedData.purchases);
-          setTotalItems(prev => ({
-            ...prev,
-            [type]: cachedData.pagination.total
-          }));
-          setLoading(false);
-          return;
+  const fetchPurchases = async (page: number, type: 'saldo' | 'payu', forceRefresh = false, admin = false) => {
+    setLoading(true);
+    let url = admin
+      ? `/api/pagos/todas?page=${page}&type=${type}`
+      : `/api/pagos/numerodepagos?page=${page}&type=${type}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.purchases) {
+      const parsedPurchases = data.purchases.map((purchase: Purchase) => {
+        try {
+          return {
+            ...purchase,
+            products: typeof purchase.products === 'string'
+              ? JSON.parse(purchase.products.replace(/\n/g, '').trim())
+              : purchase.products,
+            payuData: purchase.payuData || null
+          };
+        } catch (error) {
+          return {
+            ...purchase,
+            products: [{
+              name: purchase.description || 'Producto sin nombre',
+              price: purchase.total || 0,
+              quantity: 1
+            }],
+            payuData: purchase.payuData || null
+          };
         }
+      });
+      setPurchases(parsedPurchases);
+      if (type === 'saldo') {
+        setTotalItems(prev => ({ ...prev, saldo: data.pagination.total }));
+      } else {
+        setTotalItems(prev => ({ ...prev, payu: data.pagination.total }));
       }
-      const res = await fetch(`/api/pagos/numerodepagos?page=${page}&type=${type}`);
-      const data = await res.json();
-      if (data.purchases) {
-        const parsedPurchases = data.purchases.map((purchase: Purchase) => {
-          try {
-            return {
-              ...purchase,
-              products: typeof purchase.products === 'string' ? 
-                JSON.parse(purchase.products.replace(/\n/g, '').trim()) : 
-                purchase.products,
-              payuData: purchase.payuData || null
-            };
-          } catch (error) {
-            return {
-              ...purchase,
-              products: [{
-                name: purchase.description || 'Producto sin nombre',
-                price: purchase.total || 0,
-                quantity: 1
-              }],
-              payuData: purchase.payuData || null
-            };
-          }
-        });
-        setPurchases(parsedPurchases);
-        if (type === 'saldo') {
-          setTotalItems(prev => ({ ...prev, saldo: data.pagination.total }));
-        } else {
-          setTotalItems(prev => ({ ...prev, payu: data.pagination.total }));
-        }
-        saveToLocalStorage(type, {
-          purchases: parsedPurchases,
-          pagination: data.pagination
-        });
-      }
-    } catch (error) {
-      if (!forceRefresh) {
-        const cachedData = getFromLocalStorage(type);
-        if (cachedData) {
-          setPurchases(cachedData.purchases);
-          setTotalItems(prev => ({
-            ...prev,
-            [type]: cachedData.pagination.total
-          }));
-        }
-      }
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
     }
+    setLoading(false);
+    setIsRefreshing(false);
   };
 
   // Función para actualizar manualmente
@@ -182,16 +155,15 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     if (!isSignedIn || !user) return;
-    // Cargar datos iniciales
     const type = activeTab === 'payu' ? 'payu' : 'saldo';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    fetchPurchases(page, type);
+    fetchPurchases(page, type, false, adminTab);
     // Configurar verificación periódica de nuevas compras
     const interval = setInterval(() => {
       checkForNewPurchases(type);
     }, 30000); // Verificar cada 30 segundos
     return () => clearInterval(interval);
-  }, [isSignedIn, user, activeTab, currentPagePayu, currentPageSaldo]);
+  }, [isSignedIn, user, activeTab, currentPagePayu, currentPageSaldo, adminTab]);
 
   const handleRowClick = (purchase: Purchase) => {
     setSelectedPurchase(purchase);
@@ -215,6 +187,7 @@ export default function PurchasesPage() {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
+            <th>Usuario</th>
             <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               ID
             </th>
@@ -245,6 +218,7 @@ export default function PurchasesPage() {
                 onClick={() => handleRowClick(purchase)}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
+                <td>{purchase.user_id || "-"}</td>
                 <td className="px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
                   {purchase.payuData ? `PayU-${purchase.id}` : `#${purchase.id}`}
                 </td>
@@ -306,6 +280,21 @@ export default function PurchasesPage() {
           </Button>
         </div>
         
+        <div className="mb-4 flex gap-2">
+          <Button
+            variant={!adminTab ? "default" : "outline"}
+            onClick={() => setAdminTab(false)}
+          >
+            Mis Compras
+          </Button>
+          <Button
+            variant={adminTab ? "default" : "outline"}
+            onClick={() => setAdminTab(true)}
+          >
+            Todas las Compras
+          </Button>
+        </div>
+        
         <Tabs 
           defaultValue="saldo" 
           className="w-full" 
@@ -317,7 +306,7 @@ export default function PurchasesPage() {
             } else {
               setCurrentPagePayu(1);
             }
-            fetchPurchases(1, value as 'saldo' | 'payu');
+            fetchPurchases(1, value as 'saldo' | 'payu', false, adminTab);
           }}
         >
           <TabsList className="grid w-full grid-cols-2 mb-4">
