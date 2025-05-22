@@ -105,6 +105,16 @@ export default function PurchasesAdminPage() {
     setIsModalOpen(true);
   };
 
+  const handleChangeStatus = async (newStatus: string) => {
+    await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus, type: selectedPurchase?.payuData ? 'payu' : 'saldo' }),
+    });
+    // Opcional: refresca la lista de compras
+    setIsModalOpen(false);
+  };
+
   // Calcular total de páginas para cada tipo
   const totalPagesSaldo = Math.ceil(totalItems.saldo / itemsPerPage);
   const totalPagesPayu = Math.ceil(totalItems.payu / itemsPerPage);
@@ -317,6 +327,7 @@ export default function PurchasesAdminPage() {
           purchase={selectedPurchase} 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
+          onStatusChange={handleChangeStatus}
         />
       )}
     </DashboardLayouts>
