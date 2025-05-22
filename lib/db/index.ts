@@ -55,7 +55,7 @@ export const db = {
   wishlist: transactionsDb,
   users: usersDb,
   transactions: transactionsDb,
-  payu: payuDb,
+  payu: transactionsDb,
   visitas: visitasDb,
 } as const;
 
