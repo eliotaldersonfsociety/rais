@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import { transactions as transactionsTable, ProductItem } from '@/lib/transaction/schema';
 import { orders } from '@/lib/payu/schema';
 import { users as usersTable } from '@/lib/usuarios/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, inArray } from 'drizzle-orm';
 import { NextResponse, NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       const users = await db.users
         .select({ clerk_id: usersTable.clerk_id, email: usersTable.email })
         .from(usersTable)
-        .where(sql`clerk_id IN (${userIds.map(() => '?').join(',')})`, userIds);
+        .where(inArray(usersTable.clerk_id, userIds));
 
       // Crea un mapa de clerk_id a email
       const userIdToEmail = Object.fromEntries(users.map(u => [u.clerk_id, u.email]));
