@@ -35,6 +35,7 @@ interface Purchase {
     authorizationCode: string;
   };
   user_id?: string;
+  user_email?: string;
 }
 
 export default function PurchasesPage() {
