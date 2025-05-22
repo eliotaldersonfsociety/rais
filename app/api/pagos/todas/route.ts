@@ -54,6 +54,22 @@ export async function GET(req: NextRequest): Promise<Response> {
 
       const results = await regularTransactions.execute();
       totalCount = results.length;
+
+      // Obtén todos los clerk_id únicos de las transacciones de la página actual
+      const userIds = results
+        .slice(offset, offset + limit)
+        .map(tx => tx.user_id)
+        .filter((v, i, a) => a.indexOf(v) === i);
+
+      // Busca los emails de esos usuarios
+      const users = await db.users
+        .select({ clerk_id: usersTable.clerk_id, email: usersTable.email })
+        .from(usersTable)
+        .where(sql`clerk_id IN (${userIds.map(() => '?').join(',')})`, userIds);
+
+      // Crea un mapa de clerk_id a email
+      const userIdToEmail = Object.fromEntries(users.map(u => [u.clerk_id, u.email]));
+
       transactions = results
         .slice(offset, offset + limit)
         .map(tx => {
@@ -75,6 +91,7 @@ export async function GET(req: NextRequest): Promise<Response> {
           }
           return {
             ...tx,
+            user_email: userIdToEmail[tx.user_id] || tx.user_id, // Muestra email, si no existe, muestra el id
             products: parsedProducts
           };
         });
