@@ -117,19 +117,21 @@ export default function PurchasesAdminPage() {
     // 2. Cierra el modal inmediatamente
     setIsModalOpen(false);
 
-    // 3. Actualiza en el backend (no esperes la respuesta para actualizar la UI)
+    // 3. Actualiza en el backend
     await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
 
-    // 4. Recarga la lista en segundo plano para mantener sincronizado
-    if (activeTab === 'payu') {
-      fetchPurchases(currentPagePayu, 'payu');
-    } else {
-      fetchPurchases(currentPageSaldo, 'saldo');
-    }
+    // 4. Espera 500ms antes de recargar la lista para asegurar que el backend ya guardó el cambio
+    setTimeout(() => {
+      if (activeTab === 'payu') {
+        fetchPurchases(currentPagePayu, 'payu');
+      } else {
+        fetchPurchases(currentPageSaldo, 'saldo');
+      }
+    }, 500);
   };
 
   // Calcular total de páginas para cada tipo
