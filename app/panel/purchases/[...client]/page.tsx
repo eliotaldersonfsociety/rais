@@ -57,7 +57,7 @@ export default function PurchasesPage() {
   const checkForNewPurchases = async (type: 'saldo' | 'payu') => {
     if (!isSignedIn || !user) return;
     try {
-      const res = await fetch(`/api/pagos/numerodepagos?page=1&type=${type}`);
+      const res = await fetch(`/api/pagos/todas?page=1&type=${type}`);
       const data = await res.json();
       if (data.purchases && data.purchases.length > 0) {
         const latestPurchaseDate = new Date(Number(data.purchases[0].created_at)).getTime();
@@ -110,7 +110,7 @@ export default function PurchasesPage() {
     setLoading(true);
     let url = admin
       ? `/api/pagos/todas?page=${page}&type=${type}`
-      : `/api/pagos/numerodepagos?page=${page}&type=${type}`;
+      : `/api/pagos/todas?page=${page}&type=${type}`;
     const res = await fetch(url);
     const data = await res.json();
     if (data.purchases) {
