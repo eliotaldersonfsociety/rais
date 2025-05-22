@@ -1,6 +1,4 @@
 "use client"
-export const dynamic = "force-dynamic"
-
 import { useState, useEffect } from "react"
 import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
@@ -8,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
-import { useUser } from "@clerk/nextjs"
 
 interface PurchaseItem {
   id?: number;
@@ -38,8 +35,7 @@ interface Purchase {
   user_email?: string;
 }
 
-export default function PurchasesPage() {
-  const { isSignedIn, user } = useUser();
+export default function PurchasesAdminPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
@@ -48,69 +44,12 @@ export default function PurchasesPage() {
   const [currentPagePayu, setCurrentPagePayu] = useState(1);
   const [activeTab, setActiveTab] = useState("saldo");
   const [totalItems, setTotalItems] = useState({ saldo: 0, payu: 0 });
-  const [lastUpdate, setLastUpdate] = useState<Record<string, number>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const itemsPerPage = 10;
-  const [adminTab, setAdminTab] = useState(false);
 
-  // Función para verificar si hay nuevas compras
-  const checkForNewPurchases = async (type: 'saldo' | 'payu') => {
-    if (!isSignedIn || !user) return;
-    try {
-      const res = await fetch(`/api/pagos/todas?page=1&type=${type}`);
-      const data = await res.json();
-      if (data.purchases && data.purchases.length > 0) {
-        const latestPurchaseDate = new Date(Number(data.purchases[0].created_at)).getTime();
-        const storedLastUpdate = lastUpdate[type] || 0;
-        if (latestPurchaseDate > storedLastUpdate) {
-          // Hay nuevas compras, actualizar datos
-          await fetchPurchases(1, type, true);
-          setLastUpdate(prev => ({ ...prev, [type]: latestPurchaseDate }));
-        }
-      }
-    } catch (error) {
-      console.error('Error checking for new purchases:', error);
-    }
-  };
-
-  // Función para guardar en localStorage con timestamp de última actualización
-  const saveToLocalStorage = (type: 'saldo' | 'payu', data: any) => {
-    try {
-      const timestamp = Date.now();
-      localStorage.setItem(`purchases_${type}`, JSON.stringify({
-        timestamp,
-        lastUpdate: timestamp,
-        data: data
-      }));
-      setLastUpdate(prev => ({ ...prev, [type]: timestamp }));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
-  };
-
-  // Función para obtener de localStorage
-  const getFromLocalStorage = (type: 'saldo' | 'payu') => {
-    try {
-      const stored = localStorage.getItem(`purchases_${type}`);
-      if (stored) {
-        const { timestamp, lastUpdate: storedLastUpdate, data } = JSON.parse(stored);
-        // Verificar si los datos tienen menos de 1 minuto
-        if (Date.now() - timestamp < 60 * 1000) {
-          setLastUpdate(prev => ({ ...prev, [type]: storedLastUpdate }));
-          return data;
-        }
-      }
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-    }
-    return null;
-  };
-
-  const fetchPurchases = async (page: number, type: 'saldo' | 'payu', forceRefresh = false, admin = false) => {
+  const fetchPurchases = async (page: number, type: 'saldo' | 'payu') => {
     setLoading(true);
-    let url = admin
-      ? `/api/pagos/todas?page=${page}&type=${type}`
-      : `/api/pagos/todas?page=${page}&type=${type}`;
+    const url = `/api/pagos/todas?page=${page}&type=${type}`;
     const res = await fetch(url);
     const data = await res.json();
     if (data.purchases) {
@@ -122,7 +61,7 @@ export default function PurchasesPage() {
               ? JSON.parse(purchase.products.replace(/\n/g, '').trim())
               : purchase.products,
             payuData: purchase.payuData || null,
-            user_email: purchase.user_id || ""
+            user_email: purchase.user_email || purchase.user_id || ""
           };
         } catch (error) {
           return {
@@ -133,7 +72,7 @@ export default function PurchasesPage() {
               quantity: 1
             }],
             payuData: purchase.payuData || null,
-            user_email: purchase.user_id || ""
+            user_email: purchase.user_email || purchase.user_id || ""
           };
         }
       });
@@ -148,25 +87,18 @@ export default function PurchasesPage() {
     setIsRefreshing(false);
   };
 
-  // Función para actualizar manualmente
   const handleRefresh = async () => {
     setIsRefreshing(true);
     const type = activeTab as 'saldo' | 'payu';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    await fetchPurchases(page, type, true);
+    await fetchPurchases(page, type);
   };
 
   useEffect(() => {
-    if (!isSignedIn || !user) return;
     const type = activeTab === 'payu' ? 'payu' : 'saldo';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    fetchPurchases(page, type, false, adminTab);
-    // Configurar verificación periódica de nuevas compras
-    const interval = setInterval(() => {
-      checkForNewPurchases(type);
-    }, 30000); // Verificar cada 30 segundos
-    return () => clearInterval(interval);
-  }, [isSignedIn, user, activeTab, currentPagePayu, currentPageSaldo, adminTab]);
+    fetchPurchases(page, type);
+  }, [activeTab, currentPagePayu, currentPageSaldo]);
 
   const handleRowClick = (purchase: Purchase) => {
     setSelectedPurchase(purchase);
@@ -269,34 +201,7 @@ export default function PurchasesPage() {
   return (
     <DashboardLayouts>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold">Mis Compras</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="text-xs flex items-center gap-2 w-full md:w-auto justify-center"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-        </div>
-        
-        <div className="mb-4 flex gap-2">
-          <Button
-            variant={!adminTab ? "default" : "outline"}
-            onClick={() => setAdminTab(false)}
-          >
-            Mis Compras
-          </Button>
-          <Button
-            variant={adminTab ? "default" : "outline"}
-            onClick={() => setAdminTab(true)}
-          >
-            Todas las Compras
-          </Button>
-        </div>
+        <h2 className="text-2xl font-bold">Todas las Compras</h2>
         
         <Tabs 
           defaultValue="saldo" 
@@ -309,7 +214,7 @@ export default function PurchasesPage() {
             } else {
               setCurrentPagePayu(1);
             }
-            fetchPurchases(1, value as 'saldo' | 'payu', false, adminTab);
+            fetchPurchases(1, value as 'saldo' | 'payu');
           }}
         >
           <TabsList className="grid w-full grid-cols-2 mb-4">
