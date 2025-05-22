@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest) {
 
   // Solo actualiza en la tabla de PayU (payu_tab)
   await db.transactions.update(orders)
-    .set({ transactionState: status })
+    .set({ status })
     .where(eq(orders.referenceCode, id));
 
   return NextResponse.json({ ok: true });
