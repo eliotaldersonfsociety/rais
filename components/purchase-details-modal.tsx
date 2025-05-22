@@ -17,9 +17,10 @@ interface PurchaseDetailsModalProps {
   purchase: any
   isOpen: boolean
   onClose: () => void
+  onStatusChange?: (newStatus: string) => void
 }
 
-export function PurchaseDetailsModal({ purchase, isOpen, onClose }: PurchaseDetailsModalProps) {
+export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange }: PurchaseDetailsModalProps) {
   if (!purchase) return null
 
   // Lógica robusta para obtener los productos
@@ -231,6 +232,9 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose }: PurchaseDeta
 
         <DialogFooter>
           <Button onClick={onClose}>Cerrar</Button>
+          <Button onClick={() => onStatusChange && onStatusChange('Enviado')}>
+            Marcar como Enviado
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
