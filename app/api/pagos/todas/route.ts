@@ -36,7 +36,8 @@ export async function GET(req: NextRequest): Promise<Response> {
           tip: sql<number>`0`,
           shipping: sql<string>`'Gratis'`,
           taxes: sql<number>`0`,
-          total: orders.TX_VALUE
+          total: orders.TX_VALUE,
+          status: orders.status
         })
         .from(orders)
         .orderBy(desc(orders.processingDate))
