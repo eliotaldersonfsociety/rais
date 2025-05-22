@@ -15,6 +15,7 @@ export const orders = sqliteTable('payu_tab', {
   buyerEmail: text('buyerEmail'),
   authorizationCode: text('authorizationCode'),
   transactionState: text('transactionState'),
+  status: text('status').default('Pendiente'),
   processingDate: integer('processingDate'),
   // processingDate: Podrías querer almacenarla como INTEGER timestamp o TEXT
   // Opcional: Añadir timestamps de creación/actualización
