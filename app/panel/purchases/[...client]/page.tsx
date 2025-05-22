@@ -120,7 +120,8 @@ export default function PurchasesPage() {
             products: typeof purchase.products === 'string'
               ? JSON.parse(purchase.products.replace(/\n/g, '').trim())
               : purchase.products,
-            payuData: purchase.payuData || null
+            payuData: purchase.payuData || null,
+            user_email: purchase.user_id || ""
           };
         } catch (error) {
           return {
@@ -130,7 +131,8 @@ export default function PurchasesPage() {
               price: purchase.total || 0,
               quantity: 1
             }],
-            payuData: purchase.payuData || null
+            payuData: purchase.payuData || null,
+            user_email: purchase.user_id || ""
           };
         }
       });
@@ -218,7 +220,7 @@ export default function PurchasesPage() {
                 onClick={() => handleRowClick(purchase)}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
-                <td>{purchase.user_id || "-"}</td>
+                <td>{purchase.user_email || "-"}</td>
                 <td className="px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
                   {purchase.payuData ? `PayU-${purchase.id}` : `#${purchase.id}`}
                 </td>
