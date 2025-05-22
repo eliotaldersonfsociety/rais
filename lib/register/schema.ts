@@ -5,14 +5,14 @@ import { sql } from 'drizzle-orm';
 import { count } from 'console';
 
 // Define la tabla 'users' con Drizzle ORM
-export const users = sqliteTable('users', {
+export const users = sqliteTable('usuarios', {
   // Auto-incrementing primary key is common
   id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
 
   // Columns based on your INSERT statement
   email: text('email').notNull().unique(), // Email is typically unique and required
-  name: text('name').notNull(),
-  lastname: text('lastname').notNull(),
+  first_name: text('first_name').notNull(),
+  last_name: text('last_name').notNull(),
   address: text('address'), // Assuming address might be optional
   house_apt: text('house_apt'), // Assuming house_apt might be optional
   city: text('city'), // Assuming city might be optional
