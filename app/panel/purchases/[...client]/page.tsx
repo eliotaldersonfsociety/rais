@@ -109,10 +109,15 @@ export default function PurchasesAdminPage() {
     await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus, type: selectedPurchase?.payuData ? 'payu' : 'saldo' }),
+      body: JSON.stringify({ status: newStatus }),
     });
-    // Opcional: refresca la lista de compras
     setIsModalOpen(false);
+    // Recarga la lista de compras del tab activo
+    if (activeTab === 'payu') {
+      fetchPurchases(currentPagePayu, 'payu');
+    } else {
+      fetchPurchases(currentPageSaldo, 'saldo');
+    }
   };
 
   // Calcular total de páginas para cada tipo
