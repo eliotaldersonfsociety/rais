@@ -111,13 +111,13 @@ export default function PurchasesAdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
-    setIsModalOpen(false);
-    // Recarga la lista de compras del tab activo
+    // Espera a que termine la recarga antes de cerrar el modal
     if (activeTab === 'payu') {
-      fetchPurchases(currentPagePayu, 'payu');
+      await fetchPurchases(currentPagePayu, 'payu');
     } else {
-      fetchPurchases(currentPageSaldo, 'saldo');
+      await fetchPurchases(currentPageSaldo, 'saldo');
     }
+    setIsModalOpen(false);
   };
 
   // Calcular total de páginas para cada tipo
