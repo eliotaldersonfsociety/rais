@@ -1,0 +1,102 @@
+import { db } from '@/lib/db';
+import { transactions as transactionsTable, ProductItem } from '@/lib/transaction/schema';
+import { orders } from '@/lib/payu/schema';
+import { users as usersTable } from '@/lib/usuarios/schema';
+import { eq, desc, sql } from 'drizzle-orm';
+import { NextResponse, NextRequest } from 'next/server';
+
+export async function GET(req: NextRequest): Promise<Response> {
+  try {
+    const url = new URL(req.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const type = url.searchParams.get('type') || 'saldo';
+    const limit = 10;
+    const offset = (page - 1) * limit;
+
+    let transactions: any[] = [];
+    let totalCount = 0;
+
+    if (type === 'payu') {
+      // Todas las compras PayU
+      const payuTransactions = await db.payu
+        .select({
+          id: orders.referenceCode,
+          user_id: orders.buyerEmail,
+          amount: orders.TX_VALUE,
+          type: sql<string>`'CARD'`,
+          description: sql<string>`''`,
+          created_at: orders.processingDate,
+          products: sql<string>`json_array(json_object(
+            'name', 'Compra PayU',
+            'price', ${orders.TX_VALUE},
+            'quantity', 1
+          ))`,
+          subtotal: orders.TX_VALUE,
+          tip: sql<number>`0`,
+          shipping: sql<string>`'Gratis'`,
+          taxes: sql<number>`0`,
+          total: orders.TX_VALUE
+        })
+        .from(orders)
+        .orderBy(desc(orders.processingDate))
+        .prepare();
+
+      const results = await payuTransactions.execute();
+      totalCount = results.length;
+      transactions = results.slice(offset, offset + limit);
+    } else {
+      // Todas las compras con saldo
+      const regularTransactions = await db.transactions
+        .select()
+        .from(transactionsTable)
+        .orderBy(desc(transactionsTable.created_at))
+        .prepare();
+
+      const results = await regularTransactions.execute();
+      totalCount = results.length;
+      transactions = results
+        .slice(offset, offset + limit)
+        .map(tx => {
+          let parsedProducts: ProductItem[];
+          try {
+            if (typeof tx.products === 'string') {
+              parsedProducts = JSON.parse((tx.products as string).replace(/\n/g, '').trim());
+            } else if (Array.isArray(tx.products)) {
+              parsedProducts = tx.products;
+            } else {
+              parsedProducts = [];
+            }
+          } catch (error) {
+            parsedProducts = [{
+              name: tx.description || 'Producto sin nombre',
+              price: tx.total || 0,
+              quantity: 1
+            }];
+          }
+          return {
+            ...tx,
+            products: parsedProducts
+          };
+        });
+    }
+
+    // Opcional: puedes incluir datos del usuario en cada compra
+    // (solo para saldo, para PayU ya viene el email)
+    // Si quieres, puedes hacer un join o una consulta adicional aquí
+
+    return NextResponse.json({
+      purchases: transactions,
+      pagination: {
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        hasMore: offset + transactions.length < totalCount
+      }
+    });
+  } catch (error: any) {
+    return NextResponse.json({
+      error: 'Error al procesar la solicitud',
+      details: error.message
+    }, { status: 500 });
+  }
+}
