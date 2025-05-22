@@ -18,7 +18,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     if (type === 'payu') {
       // Todas las compras PayU
-      const payuTransactions = await db.payu
+      const payuTransactions = await db.transactions
         .select({
           id: orders.referenceCode,
           user_id: orders.buyerEmail,
