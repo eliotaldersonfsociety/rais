@@ -106,29 +106,30 @@ export default function PurchasesAdminPage() {
   };
 
   const handleChangeStatus = async (newStatus: string) => {
+    // 1. Actualiza el status localmente para el modal y la tabla
+    if (selectedPurchase) {
+      setSelectedPurchase({ ...selectedPurchase, status: newStatus });
+    }
+    setPurchases(prev => prev.map(p =>
+      p.id === selectedPurchase?.id ? { ...p, status: newStatus } : p
+    ));
+
+    // 2. Cierra el modal inmediatamente
+    setIsModalOpen(false);
+
+    // 3. Actualiza en el backend (no esperes la respuesta para actualizar la UI)
     await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
 
-    // Actualiza el status localmente para el modal
-    if (selectedPurchase) {
-      setSelectedPurchase({ ...selectedPurchase, status: newStatus });
-    }
-    // Actualiza el array de compras localmente para que la tabla también cambie
-    setPurchases(prev => prev.map(p =>
-      p.id === selectedPurchase?.id ? { ...p, status: newStatus } : p
-    ));
-
-    // Recarga la lista (opcional, para mantener sincronizado con el backend)
+    // 4. Recarga la lista en segundo plano para mantener sincronizado
     if (activeTab === 'payu') {
-      await fetchPurchases(currentPagePayu, 'payu');
+      fetchPurchases(currentPagePayu, 'payu');
     } else {
-      await fetchPurchases(currentPageSaldo, 'saldo');
+      fetchPurchases(currentPageSaldo, 'saldo');
     }
-
-    setIsModalOpen(false);
   };
 
   // Calcular total de páginas para cada tipo
