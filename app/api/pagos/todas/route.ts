@@ -115,6 +115,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       }
     });
   } catch (error: any) {
+    console.error("Error en /api/pagos/todas:", error);
     return NextResponse.json({
       error: 'Error al procesar la solicitud',
       details: error.message
