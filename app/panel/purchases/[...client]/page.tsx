@@ -112,19 +112,21 @@ export default function PurchasesAdminPage() {
       body: JSON.stringify({ status: newStatus }),
     });
 
-    // Recarga la lista y actualiza el objeto seleccionado
-    let updatedPurchases: Purchase[] = [];
+    // Actualiza el status localmente para el modal
+    if (selectedPurchase) {
+      setSelectedPurchase({ ...selectedPurchase, status: newStatus });
+    }
+    // Actualiza el array de compras localmente para que la tabla también cambie
+    setPurchases(prev => prev.map(p =>
+      p.id === selectedPurchase?.id ? { ...p, status: newStatus } : p
+    ));
+
+    // Recarga la lista (opcional, para mantener sincronizado con el backend)
     if (activeTab === 'payu') {
       await fetchPurchases(currentPagePayu, 'payu');
-      updatedPurchases = purchases; // Si fetchPurchases es asíncrono y actualiza el estado, podrías necesitar obtener el nuevo array de otra forma
     } else {
       await fetchPurchases(currentPageSaldo, 'saldo');
-      updatedPurchases = purchases;
     }
-
-    // Busca la compra actualizada y actualiza el modal antes de cerrar
-    const updated = updatedPurchases.find(p => p.id === selectedPurchase?.id);
-    if (updated) setSelectedPurchase(updated);
 
     setIsModalOpen(false);
   };
