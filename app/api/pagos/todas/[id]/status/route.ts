@@ -4,13 +4,13 @@ import { orders } from '@/lib/payu/schema';
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 
-export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { status } = await req.json();
 
   // Solo actualiza en la tabla de PayU (payu_tab)
   await db.transactions.update(orders)
     .set({ transactionState: status })
-    .where(eq(orders.referenceCode, context.params.id));
+    .where(eq(orders.referenceCode, params.id));
 
   return NextResponse.json({ ok: true });
 }
