@@ -191,11 +191,15 @@ export default function PurchasesAdminPage() {
                   <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                     purchase.payuData?.transactionState === 'APPROVED' || purchase.status === 'Completado'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                      : purchase.status === 'Enviado'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {purchase.payuData?.transactionState === 'APPROVED' || purchase.status === 'Completado'
+                    {purchase.payuData?.transactionState === 'APPROVED'
                       ? 'Completado'
-                      : 'Pendiente'
+                      : purchase.status
+                        ? purchase.status
+                        : 'Pendiente'
                     }
                   </span>
                 </td>
