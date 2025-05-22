@@ -25,4 +25,5 @@ export const transactions = sqliteTable('transactions', {
   shipping: text('shipping').notNull(),
   taxes: real('taxes').notNull(),
   total: real('total').notNull(),
+  status: text('status').default('Pendiente'),
 });
