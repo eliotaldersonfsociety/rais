@@ -18,7 +18,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     if (type === 'payu') {
       // Todas las compras PayU
-      const payuTransactions = await db.transactions
+      const payuTransactions = await db.payu
         .select({
           id: orders.referenceCode,
           user_id: orders.buyerEmail,
@@ -97,7 +97,8 @@ export async function GET(req: NextRequest): Promise<Response> {
           return {
             ...tx,
             user_email: userIdToEmail[tx.user_id] || tx.user_id || "",
-            products: parsedProducts
+            products: parsedProducts,
+            status: tx.status || 'Pendiente'
           };
         });
     }
