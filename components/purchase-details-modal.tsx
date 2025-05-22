@@ -1,242 +1,340 @@
 "use client"
-
-import { Package, User, CreditCard, MapPin } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { useState, useEffect } from "react"
+import { DashboardLayouts } from "@/components/dashboard-layouts"
+import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card } from "@/components/ui/card"
 
-interface PurchaseDetailsModalProps {
-  purchase: any
-  isOpen: boolean
-  onClose: () => void
-  onStatusChange?: (newStatus: string) => void
+interface PurchaseItem {
+  id?: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  color?: string;
+  size?: string;
+  sizeRange?: string | null;
 }
 
-export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange }: PurchaseDetailsModalProps) {
-  if (!purchase) return null
+interface Purchase {
+  id: string | number;
+  description: string;
+  total: number;
+  created_at: number | string;
+  products: string | PurchaseItem[];
+  items?: PurchaseItem[];
+  status?: string;
+  payuData?: {
+    transactionState: string;
+    paymentMethod: number;
+    authorizationCode: string;
+  };
+  user_id?: string;
+  user_email?: string;
+}
 
-  // Lógica robusta para obtener los productos
-  let items: any[] = []
-  if (Array.isArray(purchase.items)) {
-    items = purchase.items
-  } else if (Array.isArray(purchase.products)) {
-    items = purchase.products
-  } else if (typeof purchase.products === "string") {
-    try {
-      items = JSON.parse(purchase.products)
-    } catch {
-      items = []
-    }
-  }
-  // Filtra solo objetos válidos
-  const validItems = Array.isArray(items)
-    ? items.filter((item: any) => item && typeof item === "object" && "name" in item)
-    : []
+export default function PurchasesAdminPage() {
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPageSaldo, setCurrentPageSaldo] = useState(1);
+  const [currentPagePayu, setCurrentPagePayu] = useState(1);
+  const [activeTab, setActiveTab] = useState("saldo");
+  const [totalItems, setTotalItems] = useState({ saldo: 0, payu: 0 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const itemsPerPage = 10;
 
-  const purchasesPerPage = 5;
-
-  // Guardar en localStorage con timestamp
-  function saveToLocalStorage(key: string, data: any) {
-    const timestamp = Date.now();
-    localStorage.setItem(key, JSON.stringify({ data, timestamp }));
-  }
-
-  // Leer de localStorage y validar expiración (ej: 1 minuto)
-  function getFromLocalStorage(key: string, maxAgeMs: number = 60 * 1000) {
-    const item = localStorage.getItem(key);
-    if (!item) return null;
-    try {
-      const { data, timestamp } = JSON.parse(item);
-      if (Date.now() - timestamp < maxAgeMs) {
-        return data;
+  const fetchPurchases = async (page: number, type: 'saldo' | 'payu') => {
+    setLoading(true);
+    const url = `/api/pagos/todas?page=${page}&type=${type}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.purchases) {
+      const parsedPurchases = data.purchases.map((purchase: Purchase) => {
+        try {
+          return {
+            ...purchase,
+            products: typeof purchase.products === 'string'
+              ? JSON.parse(purchase.products.replace(/\n/g, '').trim())
+              : purchase.products,
+            payuData: purchase.payuData || null,
+            user_email: purchase.user_email || purchase.user_id || ""
+          };
+        } catch (error) {
+          return {
+            ...purchase,
+            products: [{
+              name: purchase.description || 'Producto sin nombre',
+              price: purchase.total || 0,
+              quantity: 1
+            }],
+            payuData: purchase.payuData || null,
+            user_email: purchase.user_email || purchase.user_id || ""
+          };
+        }
+      });
+      setPurchases(parsedPurchases);
+      if (type === 'saldo') {
+        setTotalItems(prev => ({ ...prev, saldo: data.pagination.total }));
+      } else {
+        setTotalItems(prev => ({ ...prev, payu: data.pagination.total }));
       }
-    } catch {
-      // Si hay error, ignora el caché
     }
-    return null;
-  }
+    setLoading(false);
+    setIsRefreshing(false);
+  };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Detalles de Compra #{purchase.id || 'N/A'}
-          </DialogTitle>
-          <DialogDescription>
-            {(() => {
-              try {
-                // El timestamp viene en segundos, convertir a milisegundos
-                const timestamp = Number(purchase.created_at) * 1000;
-                const date = new Date(timestamp);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    const type = activeTab as 'saldo' | 'payu';
+    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+    await fetchPurchases(page, type);
+  };
 
-                // Verificar si la fecha es válida y no es muy antigua
-                if (isNaN(date.getTime()) || date.getFullYear() < 2020) {
-                  return `Realizada el ${new Date().toLocaleDateString('es-ES', {
+  useEffect(() => {
+    const type = activeTab === 'payu' ? 'payu' : 'saldo';
+    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+    fetchPurchases(page, type);
+  }, [activeTab, currentPagePayu, currentPageSaldo]);
+
+  const handleRowClick = (purchase: Purchase) => {
+    setSelectedPurchase(purchase);
+    setIsModalOpen(true);
+  };
+
+  const handleChangeStatus = async (newStatus: string) => {
+    await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    setIsModalOpen(false);
+    // Recarga la lista de compras del tab activo
+    if (activeTab === 'payu') {
+      fetchPurchases(currentPagePayu, 'payu');
+    } else {
+      fetchPurchases(currentPageSaldo, 'saldo');
+    }
+  };
+
+  // Calcular total de páginas para cada tipo
+  const totalPagesSaldo = Math.ceil(totalItems.saldo / itemsPerPage);
+  const totalPagesPayu = Math.ceil(totalItems.payu / itemsPerPage);
+
+  // Renderizar la tabla de compras
+  const renderPurchasesTable = (purchases: Purchase[]) => {
+    if (purchases.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No hay compras registradas en esta categoría.</p>
+        </div>
+      );
+    }
+    return (
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th>Usuario</th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              ID
+            </th>
+            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Producto
+            </th>
+            <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Fecha
+            </th>
+            <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Estado
+            </th>
+            <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Total
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {purchases.map((purchase, index) => {
+            const validItems = Array.isArray(purchase.products) 
+              ? purchase.products 
+              : typeof purchase.products === 'string'
+                ? JSON.parse(purchase.products)
+                : [];
+            return (
+              <tr
+                key={`${purchase.payuData ? 'payu' : 'saldo'}_${purchase.id}_${index}`}
+                onClick={() => handleRowClick(purchase)}
+                className="hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <td>{purchase.user_email || "-"}</td>
+                <td className="px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
+                  {purchase.payuData ? `PayU-${purchase.id}` : `#${purchase.id}`}
+                </td>
+                <td className="px-4 py-3 text-xs sm:text-sm">
+                  <div className="line-clamp-2">
+                    {validItems.length > 0 
+                      ? validItems.map((item: any) => item.name).join(", ")
+                      : purchase.description || "Sin descripción"
+                    }
+                  </div>
+                </td>
+                <td className="hidden sm:table-cell px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
+                  {new Date(Number(purchase.created_at)).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  })}`;
-                }
+                    day: 'numeric'
+                  })}
+                </td>
+                <td className="hidden sm:table-cell px-4 py-3 text-xs sm:text-sm">
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                    purchase.payuData?.transactionState === 'APPROVED' || purchase.status === 'Completado'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {purchase.payuData?.transactionState === 'APPROVED' || purchase.status === 'Completado'
+                      ? 'Completado'
+                      : 'Pendiente'
+                    }
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right text-xs sm:text-sm whitespace-nowrap">
+                  ${typeof purchase.total === 'number' 
+                    ? purchase.total.toFixed(2) 
+                    : parseFloat(purchase.total || '0').toFixed(2)
+                  }
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  };
 
-                return `Realizada el ${date.toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false
-                })}`;
-              } catch (error) {
-                return 'Fecha no disponible';
-              }
-            })()}
-          </DialogDescription>
-        </DialogHeader>
+  return (
+    <DashboardLayouts>
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <h2 className="text-2xl font-bold">Todas las Compras</h2>
+        
+        <Tabs 
+          defaultValue="saldo" 
+          className="w-full" 
+          value={activeTab} 
+          onValueChange={(value) => {
+            setActiveTab(value as 'saldo' | 'payu');
+            if (value === 'saldo') {
+              setCurrentPageSaldo(1);
+            } else {
+              setCurrentPagePayu(1);
+            }
+            fetchPurchases(1, value as 'saldo' | 'payu');
+          }}
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="saldo" className="text-center">
+              Saldo ({totalItems.saldo})
+            </TabsTrigger>
+            <TabsTrigger value="payu" className="text-center">
+              PayU ({totalItems.payu})
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid gap-6 py-4">
-          {/* Estado de la compra */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Estado:</span>
-            <Badge variant={purchase.status === "Entregado" ? "default" : "outline"}>{purchase.status || 'Pendiente'}</Badge>
-          </div>
-
-          <Separator />
-
-          {/* Productos */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-2">Productos</h3>
-            <div className="space-y-3">
-              {validItems.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No hay productos en esta compra.</div>
-              ) : (
-                validItems.map((item: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <div className="pr-2">
-                      <p className="font-medium text-sm sm:text-base">{item.name || item.description || "Sin nombre"}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Cantidad: {item.quantity || 1}</p>
+          <TabsContent value="saldo" className="mt-4">
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-4">Compras con Saldo</h3>
+                {loading ? (
+                  <div className="p-6 text-center">Cargando compras...</div>
+                ) : (
+                  <>
+                    <div className="rounded-lg border overflow-hidden">
+                      <div className="overflow-x-auto">
+                        {renderPurchasesTable(purchases)}
+                      </div>
                     </div>
-                    <p className="font-medium text-sm sm:text-base whitespace-nowrap">${item.price || item.total || 0}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Detalles de pago */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Detalles de Pago
-            </h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm">Subtotal:</span>
-                <span>${purchase.subtotal?.toFixed(2) || '0.00'}</span>
+                    {totalPagesSaldo > 1 && (
+                      <div className="flex items-center justify-center gap-2 py-4 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPageSaldo(prev => Math.max(1, prev - 1))}
+                          disabled={currentPageSaldo === 1 || loading}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm">
+                          Página {currentPageSaldo} de {totalPagesSaldo}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPageSaldo(prev => Math.min(totalPagesSaldo, prev + 1))}
+                          disabled={currentPageSaldo >= totalPagesSaldo || loading}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Envío:</span>
-                <span>Gratis</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Taxes:</span>
-                <span>${purchase.taxes?.toFixed(2) || '0.00'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm">Propina:</span>
-                <span>${purchase.tip?.toFixed(2) || '0.00'}</span>
-              </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between font-bold">
-                <span>Total:</span>
-                <span>${purchase.total?.toFixed(2) || '0.00'}</span>
-              </div>
-              <div className="mt-4 space-y-1">
-                <p className="text-sm font-medium">Método de pago:</p>
-                <p className="text-sm">{
-                  purchase.type === 'CARD' ? 'Tarjeta de Crédito/Débito' :
-                  purchase.type === 'CASH' ? 'Efectivo' :
-                  purchase.type === 'TRANSFER' ? 'Transferencia Bancaria' :
-                  purchase.type || 'No especificado'
-                }</p>
-              </div>
-            </div>
-          </div>
+            </Card>
+          </TabsContent>
 
-          <Separator />
+          <TabsContent value="payu" className="mt-4">
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-4">Compras con PayU</h3>
+                {loading ? (
+                  <div className="p-6 text-center">Cargando compras...</div>
+                ) : (
+                  <>
+                    <div className="rounded-lg border overflow-hidden">
+                      <div className="overflow-x-auto">
+                        {renderPurchasesTable(purchases)}
+                      </div>
+                    </div>
+                    {totalPagesPayu > 1 && (
+                      <div className="flex items-center justify-center gap-2 py-4 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPagePayu(prev => Math.max(1, prev - 1))}
+                          disabled={currentPagePayu === 1 || loading}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm">
+                          Página {currentPagePayu} de {totalPagesPayu}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPagePayu(prev => Math.min(totalPagesPayu, prev + 1))}
+                          disabled={currentPagePayu >= totalPagesPayu || loading}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
 
-          {/* Datos del usuario */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Datos del Cliente
-            </h3>
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium">Nombre:</span> {purchase.customer?.name || 'No disponible'}
-              </p>
-              <p className="text-sm">
-                <span className="font-medium">Email:</span> {purchase.customer?.email || 'No disponible'}
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Dirección de envío */}
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Dirección de Envío
-            </h3>
-            <div className="space-y-1 text-sm">
-              {purchase.customer?.address ? (
-                <>
-                  <p>{purchase.customer.address}</p>
-                  {purchase.customer.house_apt && (
-                    <p>Apt/Casa: {purchase.customer.house_apt}</p>
-                  )}
-                  {(purchase.customer.city || purchase.customer.state || purchase.customer.postal_code) && (
-                    <p>
-                      {[
-                        purchase.customer.city,
-                        purchase.customer.state,
-                        purchase.customer.postal_code
-                      ].filter(Boolean).join(', ')}
-                    </p>
-                  )}
-                  {purchase.customer.phone && (
-                    <p>Teléfono: {purchase.customer.phone}</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground">Dirección no disponible</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button onClick={onClose}>Cerrar</Button>
-          <Button onClick={() => onStatusChange && onStatusChange('Enviado')}>
-            Marcar como Enviado
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
+      {selectedPurchase && (
+        <PurchaseDetailsModal 
+          purchase={selectedPurchase} 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onStatusChange={handleChangeStatus}
+        />
+      )}
+    </DashboardLayouts>
+  );
 }
