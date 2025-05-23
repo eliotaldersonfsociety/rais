@@ -112,10 +112,11 @@ export default function PurchasesAdminPage() {
     console.log("Modal debería mostrar:", data.purchase);
 
     setSelectedPurchase(data.purchase);
-    await handleRefresh();
-
-    // 4. (Opcional) Cierra el modal automáticamente
-    // setIsModalOpen(false);
+    setIsModalOpen(false);
+    // Espera 200ms antes de refrescar la lista
+    setTimeout(async () => {
+      await handleRefresh();
+    }, 200);
   };
 
   // Calcular total de páginas para cada tipo
