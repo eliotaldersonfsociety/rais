@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/');
-  const id = pathParts[pathParts.length - 2];
+  const id = pathParts[pathParts.length - 1];
   const type = url.searchParams.get('type') || 'saldo';
 
   console.log("ID recibido:", id, "Tipo:", type);
