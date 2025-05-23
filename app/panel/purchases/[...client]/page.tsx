@@ -1,12 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
 import { DashboardLayouts } from "@/components/dashboard-layouts"
-import { PurchaseDetailsModal } from "@/components/purchase-details-modal" //vamos
+import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
-import { usePurchaseStore } from '@/lib/usePurchaseStore'
 
 interface PurchaseItem {
   id?: number;
@@ -37,11 +36,7 @@ interface Purchase {
 }
 
 export default function PurchasesAdminPage() {
-  // Usa Zustand para el estado global
-  const purchases = usePurchaseStore(state => state.purchases);
-  const fetchPurchases = usePurchaseStore(state => state.fetchPurchases);
-  const updatePurchaseStatus = usePurchaseStore(state => state.updatePurchaseStatus);
-
+  const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,6 +46,24 @@ export default function PurchasesAdminPage() {
   const [totalItems, setTotalItems] = useState({ saldo: 0, payu: 0 });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const itemsPerPage = 10;
+
+  const fetchPurchases = async (page, type) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`);
+      const data = await res.json();
+      setPurchases(data.purchases || []);
+    } catch (error) {
+      setPurchases([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const type = activeTab === 'payu' ? 'payu' : 'saldo';
+    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+    fetchPurchases(page, type);
+  }, [activeTab, currentPagePayu, currentPageSaldo]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -62,13 +75,6 @@ export default function PurchasesAdminPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    const type = activeTab === 'payu' ? 'payu' : 'saldo';
-    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    setLoading(true);
-    fetchPurchases(page, type).finally(() => setLoading(false));
-  }, [activeTab, currentPagePayu, currentPageSaldo, fetchPurchases]);
-
   const handleRowClick = (purchase: Purchase) => {
     setSelectedPurchase(purchase);
     setIsModalOpen(true);
@@ -76,7 +82,7 @@ export default function PurchasesAdminPage() {
 
   const handleChangeStatus = async (newStatus: string) => {
     if (!selectedPurchase) return;
-    await updatePurchaseStatus(selectedPurchase.id, newStatus, activeTab as 'saldo' | 'payu');
+    // Implement the logic to update the purchase status
     setIsModalOpen(false);
   };
   
@@ -97,7 +103,6 @@ export default function PurchasesAdminPage() {
       console.log(`Intento ${i + 1}:`, updated?.status);
       if (updated && updated.status === expectedStatus) {
         // Actualiza el estado global para que la UI lo muestre
-        await updatePurchaseStatus(id, expectedStatus, type);
         return true;
       }
       await new Promise((res) => setTimeout(res, 400));
