@@ -4,7 +4,7 @@ import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" //sss
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -112,12 +112,14 @@ export default function PurchasesAdminPage() {
 
     console.log("Modal debería mostrar:", data.purchase);
 
+    // 3. Actualiza el modal y cierra
     setSelectedPurchase(data.purchase);
     setIsModalOpen(false);
-    // Espera 200ms antes de refrescar la lista
+
+    // 4. Espera 1 segundo antes de refrescar la lista general
     setTimeout(async () => {
       await handleRefresh();
-    }, 200);
+    }, 1000);
   };
 
   // Calcular total de páginas para cada tipo
