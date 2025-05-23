@@ -11,18 +11,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    console.log('Actualizando compra:', { id, status });
     const result = await db.transactions
       .update(transactions)
       .set({ status })
-      .where(eq(transactions.id, id));
+      .where(eq(transactions.id, typeof id === 'number' ? id : Number(id))); // fuerza a número si es necesario
 
-    // result es el número de filas afectadas
     if (result.rowsAffected > 0) {
       return NextResponse.json({ ok: true });
     } else {
-      return NextResponse.json({ error: 'No se pudo actualizar' }, { status: 500 });
+      return NextResponse.json({ error: 'No se pudo actualizar', detalle: { id, status } }, { status: 500 });
     }
   } catch (error) {
-    return NextResponse.json({ error: 'Error en la base de datos' }, { status: 500 });
+    console.error('Error en actualización:', error);
+    return NextResponse.json({ error: 'Error en la base de datos', detalle: String(error) }, { status: 500 });
   }
 }
