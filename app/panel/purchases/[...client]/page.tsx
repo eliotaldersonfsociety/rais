@@ -24,7 +24,7 @@ interface Purchase {
   total: number;
   created_at: number | string;
   products: string | PurchaseItem[];
-  items?: PurchaseItem[];
+  items?: PurchaseItem[]; //asi
   status?: string;
   payuData?: {
     transactionState: string;
