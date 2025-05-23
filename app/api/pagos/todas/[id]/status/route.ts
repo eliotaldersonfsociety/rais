@@ -13,15 +13,19 @@ export async function PATCH(req: NextRequest) {
   const pathParts = url.pathname.split('/');
   const id = pathParts[pathParts.length - 2]; // .../todas/[id]/status
 
+  console.log("PATCH recibido:", { id, status, type });
+
+  let result;
   if (type === 'payu') {
-    await db.payu.update(orders)
+    result = await db.payu.update(orders)
       .set({ status })
       .where(eq(orders.referenceCode, id));
   } else {
-    await db.transactions.update(transactions)
+    result = await db.transactions.update(transactions)
       .set({ status })
       .where(eq(transactions.id, Number(id)));
   }
+  console.log("Resultado de la actualización:", result);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, result });
 }
