@@ -30,5 +30,17 @@ export async function PATCH(req: NextRequest) {
     console.log("Resultado update transactions:", result);
   }
 
-  return NextResponse.json({ ok: true, result });
+  // Verifica que el estado se haya actualizado correctamente en la base de datos
+  let updatedStatus;
+  if (type === 'payu') {
+    const updatedOrder = await db.payu.select().from(orders).where(eq(orders.referenceCode, id));
+    updatedStatus = updatedOrder[0]?.status;
+  } else {
+    const updatedTransaction = await db.transactions.select().from(transactions).where(eq(transactions.id, Number(id)));
+    updatedStatus = updatedTransaction[0]?.status;
+  }
+
+  console.log("Estado actualizado en la base de datos:", updatedStatus);
+
+  return NextResponse.json({ ok: true, result, updatedStatus });
 }
