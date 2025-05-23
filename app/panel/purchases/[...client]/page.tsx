@@ -85,6 +85,11 @@ export default function PurchasesAdminPage() {
     if (!selectedPurchase) return;
     try {
       const isPayu = activeTab === 'payu';
+      console.log(
+        activeTab === 'payu'
+          ? { referenceCode: selectedPurchase.referenceCode, status: newStatus, type: 'payu' }
+          : { id: selectedPurchase.id, status: newStatus, type: 'saldo' }
+      );
       await fetch('/api/pagos/actualizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
