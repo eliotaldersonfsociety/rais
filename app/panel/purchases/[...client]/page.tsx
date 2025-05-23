@@ -60,6 +60,7 @@ export default function PurchasesAdminPage() {
       const data = await res.json();
       setPurchases(data.purchases || []);
       setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
+      console.log("Compras recibidas del backend:", data.purchases);
     } catch (error) {
       setPurchases([]);
     }
