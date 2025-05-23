@@ -46,6 +46,8 @@ export async function GET(req: NextRequest): Promise<Response> {
       const results = await payuTransactions.execute();
       console.log("PayU results:", results);
       totalCount = results.length;
+      const ids = results.map(r => r.id);
+      console.log("IDs únicos en results:", new Set(ids).size, "Total:", ids.length);
       transactions = results.slice(offset, offset + limit).map(tx => ({
         ...tx,
         user_email: tx.user_email || tx.user_id
