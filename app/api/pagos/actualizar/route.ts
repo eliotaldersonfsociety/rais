@@ -19,20 +19,26 @@ export async function POST(req: NextRequest) {
         .update(transactions)
         .set({ status })
         .where(eq(transactions.id, Number(id)));
+      // Haz un select del registro actualizado
+      const updated = await db.transactions
+        .select()
+        .from(transactions)
+        .where(eq(transactions.id, Number(id)));
+      return NextResponse.json({ ok: true, updated });
     } else if (type === 'payu') {
       // Actualiza en payu_tab por referenceCode (string)
       result = await db.payu
         .update(orders)
         .set({ status })
         .where(eq(orders.referenceCode, referenceCode));
+      // Haz un select del registro actualizado
+      const updated = await db.payu
+        .select()
+        .from(orders)
+        .where(eq(orders.referenceCode, referenceCode));
+      return NextResponse.json({ ok: true, updated });
     } else {
       return NextResponse.json({ error: 'Tipo de compra inválido' }, { status: 400 });
-    }
-
-    if (result.rowsAffected > 0) {
-      return NextResponse.json({ ok: true });
-    } else {
-      return NextResponse.json({ error: 'No se pudo actualizar', detalle: { id, referenceCode, status, type } }, { status: 500 });
     }
   } catch (error) {
     console.error('Error en actualización:', error);
