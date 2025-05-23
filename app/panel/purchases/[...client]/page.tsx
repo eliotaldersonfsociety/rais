@@ -20,6 +20,7 @@ interface PurchaseItem {
 
 interface Purchase {
   id: string | number;
+  referenceCode?: string;
   description: string;
   total: number;
   created_at: number | string;
@@ -83,10 +84,15 @@ export default function PurchasesAdminPage() {
   const handleChangeStatus = async (newStatus: string) => {
     if (!selectedPurchase) return;
     try {
+      const isPayu = activeTab === 'payu';
       await fetch('/api/pagos/actualizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selectedPurchase.id, status: newStatus }),
+        body: JSON.stringify(
+          isPayu
+            ? { referenceCode: selectedPurchase.referenceCode, status: newStatus, type: 'payu' }
+            : { id: selectedPurchase.id, status: newStatus, type: 'saldo' }
+        ),
       });
       // Refresca la lista de compras
       const type = activeTab as 'saldo' | 'payu';
