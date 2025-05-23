@@ -54,13 +54,11 @@ export async function GET(req: NextRequest): Promise<Response> {
       }));
     } else {
       // Todas las compras con saldo
-      const regularTransactions = await db.transactions
+      const results = await db.transactions
         .select()
         .from(transactionsTable)
-        .orderBy(desc(transactionsTable.created_at))
-        .prepare();
+        .orderBy(desc(transactionsTable.created_at));
 
-      const results = await regularTransactions.execute();
       console.log("Saldo results:", results);
       totalCount = results.length;
 
