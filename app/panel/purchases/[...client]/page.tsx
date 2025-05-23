@@ -38,8 +38,8 @@ interface Purchase {
 }
 
 export default function PurchasesAdminPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [purchases, setPurchases] = useState<Purchase[]>([]); // Estado solo para renderizar
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPageSaldo, setCurrentPageSaldo] = useState(1);
@@ -48,38 +48,43 @@ export default function PurchasesAdminPage() {
   const itemsPerPage = 10;
   const [totalItems, setTotalItems] = useState({ saldo: 0, payu: 0 });
 
-  // Traer compras del backend
-  const fetchPurchases = async (page: number, type: 'saldo' | 'payu') => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`, {
-        headers: {
-          'Cache-Control': 'no-store'
-        }
-      });
-      const data = await res.json();
-      setPurchases(Array.isArray(data.purchases) ? [...data.purchases] : []);
-      setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
-      console.log("Compras recibidas del backend:", data.purchases);
-    } catch (error) {
-      setPurchases([]);
-    }
-    setLoading(false);
-  };
-
-  // Efecto para cargar compras al cambiar pestaña o página
+  // Traer compras del backend SIEMPRE que cambie tab o página
   useEffect(() => {
-    const type = activeTab;
-    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    fetchPurchases(page, type);
+    const fetchPurchases = async () => {
+      setLoading(true);
+      try {
+        const type = activeTab;
+        const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+        const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`, {
+          headers: { 'Cache-Control': 'no-store' }
+        });
+        const data = await res.json();
+        setPurchases(Array.isArray(data.purchases) ? [...data.purchases] : []);
+        setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
+      } catch (error) {
+        setPurchases([]);
+      }
+      setLoading(false);
+    };
+    fetchPurchases();
   }, [activeTab, currentPagePayu, currentPageSaldo]);
 
   // Refrescar manualmente
   const handleRefresh = async () => {
-    const type = activeTab;
-    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    await fetchPurchases(page, type);
-    console.log("Lista de compras después de refrescar:", purchases);
+    setLoading(true);
+    try {
+      const type = activeTab;
+      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+      const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`, {
+        headers: { 'Cache-Control': 'no-store' }
+      });
+      const data = await res.json();
+      setPurchases(Array.isArray(data.purchases) ? [...data.purchases] : []);
+      setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
+    } catch (error) {
+      setPurchases([]);
+    }
+    setLoading(false);
   };
 
   // Abrir modal de detalles
@@ -103,23 +108,17 @@ export default function PurchasesAdminPage() {
       body: JSON.stringify(payload),
     });
 
-    // 2. Trae el detalle actualizado
+    // 2. Trae el detalle actualizado para el modal
     const detailUrl = isPayu
       ? `/api/pagos/todas/${selectedPurchase.id}?type=payu`
       : `/api/pagos/todas/${selectedPurchase.id}?type=saldo`;
     const res = await fetch(detailUrl, { headers: { 'Cache-Control': 'no-store' } });
     const data = await res.json();
-
-    console.log("Modal debería mostrar:", data.purchase);
-
-    // 3. Actualiza el modal y cierra
     setSelectedPurchase(data.purchase);
     setIsModalOpen(false);
 
-    // 4. Espera 1 segundo antes de refrescar la lista general
-    setTimeout(async () => {
-      await handleRefresh();
-    }, 1000);
+    // 3. Refresca la lista general inmediatamente
+    await handleRefresh();
   };
 
   // Calcular total de páginas para cada tipo
@@ -213,7 +212,6 @@ export default function PurchasesAdminPage() {
             } else {
               setCurrentPagePayu(1);
             }
-            fetchPurchases(1, value as 'saldo' | 'payu');
           }}
         >
           <TabsList className="grid w-full grid-cols-2 mb-4">
