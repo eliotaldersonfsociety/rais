@@ -58,7 +58,7 @@ export default function PurchasesAdminPage() {
         }
       });
       const data = await res.json();
-      setPurchases(data.purchases || []);
+      setPurchases([...data.purchases] || []);
       setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
       console.log("Compras recibidas del backend:", data.purchases);
     } catch (error) {
@@ -128,6 +128,7 @@ export default function PurchasesAdminPage() {
 
   // Renderizar la tabla de compras
   const renderPurchasesTable = (purchases: Purchase[]) => {
+    console.log("Tabla va a renderizar compras:", purchases);
     if (purchases.length === 0) {
       return (
         <div className="text-center py-8">
