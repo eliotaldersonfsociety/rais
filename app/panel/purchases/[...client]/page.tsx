@@ -51,7 +51,11 @@ export default function PurchasesAdminPage() {
   const fetchPurchases = async (page: number, type: 'saldo' | 'payu') => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`);
+      const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`, {
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      });
       const data = await res.json();
       setPurchases(data.purchases || []);
       setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
