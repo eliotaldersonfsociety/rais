@@ -121,27 +121,34 @@ export default function PurchasesAdminPage() {
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
 
-    // Primer intento de recarga
-    setTimeout(async () => {
-      if (activeTab === 'payu') {
-        await fetchPurchases(currentPagePayu, 'payu');
-      } else {
-        await fetchPurchases(currentPageSaldo, 'saldo');
-      }
+    // Reintenta la recarga hasta que el estado cambie realmente
+    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+    await retryFetchUntilStatus(
+      selectedPurchase?.id!,
+      newStatus,
+      activeTab as 'saldo' | 'payu',
+      page
+    );
+  };
 
-      // Verifica si el estado cambió realmente en la UI
-      const updated = purchases.find(p => p.id === selectedPurchase?.id);
-      if (updated && updated.status !== newStatus) {
-        // Si no cambió, reintenta la recarga después de 500ms
-        setTimeout(() => {
-          if (activeTab === 'payu') {
-            fetchPurchases(currentPagePayu, 'payu');
-          } else {
-            fetchPurchases(currentPageSaldo, 'saldo');
-          }
-        }, 500);
+  const retryFetchUntilStatus = async (
+    id: string | number,
+    expectedStatus: string,
+    type: 'saldo' | 'payu',
+    page: number,
+    maxRetries = 3
+  ) => {
+    for (let i = 0; i < maxRetries; i++) {
+      await fetchPurchases(page, type);
+      // Espera a que React actualice el estado
+      await new Promise(res => setTimeout(res, 200));
+      const updated = purchases.find(p => p.id === id);
+      if (updated && updated.status === expectedStatus) {
+        return true;
       }
-    }, 500);
+      await new Promise(res => setTimeout(res, 400));
+    }
+    return false;
   };
 
   // Calcular total de páginas para cada tipo
