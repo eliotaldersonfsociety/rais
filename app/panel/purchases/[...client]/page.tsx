@@ -24,7 +24,7 @@ interface Purchase {
   total: number;
   created_at: number | string;
   products: string | PurchaseItem[];
-  items?: PurchaseItem[]; //asi
+  items?: PurchaseItem[];
   status?: string;
   payuData?: {
     transactionState: string;
@@ -82,7 +82,19 @@ export default function PurchasesAdminPage() {
 
   const handleChangeStatus = async (newStatus: string) => {
     if (!selectedPurchase) return;
-    // Implement the logic to update the purchase status
+    try {
+      await fetch('/api/pagos/actualizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedPurchase.id, status: newStatus }),
+      });
+      // Refresca la lista de compras
+      const type = activeTab as 'saldo' | 'payu';
+      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+      await fetchPurchases(page, type);
+    } catch (error) {
+      // Puedes mostrar un toast de error aquí si lo deseas
+    }
     setIsModalOpen(false);
   };
   
