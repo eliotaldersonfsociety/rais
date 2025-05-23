@@ -107,30 +107,23 @@ export default function PurchasesAdminPage() {
   };
 
   const handleChangeStatus = async (newStatus: string) => {
-    if (selectedPurchase) {
-      setSelectedPurchase({ ...selectedPurchase, status: newStatus });
-    }
-    setPurchases(prev => prev.map(p =>
-      p.id === selectedPurchase?.id ? { ...p, status: newStatus } : p
-    ));
-
-    setIsModalOpen(false);
-
     await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
 
-    // Ahora usa el polling para esperar a que el backend devuelva el estado correcto
+    // Polling hasta que el backend devuelva el estado actualizado
     const type = activeTab as 'saldo' | 'payu';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
     await retryFetchUntilStatus(
       selectedPurchase?.id!,
       newStatus,
       type,
-      page
+      page,
+      20 // más reintentos
     );
+    setIsModalOpen(false);
   };
 
   const retryFetchUntilStatus = async (
