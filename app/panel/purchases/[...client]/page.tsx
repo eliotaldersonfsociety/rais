@@ -113,13 +113,14 @@ export default function PurchasesAdminPage() {
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
 
-    // Espera un poco para asegurar que la base de datos se actualizó
-    setTimeout(async () => {
-      const type = activeTab as 'saldo' | 'payu';
-      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-      await fetchPurchases(page, type); // <-- recarga toda la lista
-      setIsModalOpen(false);
-    }, 800);
+    // Actualiza solo la compra modificada
+    const updated = await fetchSinglePurchase(selectedPurchase?.id!, activeTab as 'saldo' | 'payu');
+    setPurchases(prev =>
+      prev.map(p =>
+        p.id === updated.id ? { ...p, ...updated } : p
+      )
+    );
+    setIsModalOpen(false);
   };
 
   const retryFetchUntilStatus = async (
@@ -152,7 +153,7 @@ export default function PurchasesAdminPage() {
   const fetchSinglePurchase = async (id: string | number, type: 'saldo' | 'payu') => {
     const res = await fetch(`/api/pagos/todas/${id}?type=${type}`);
     const data = await res.json();
-    // Actualiza solo esa compra en el array de compras
+    return data.purchase; // Ajusta según la respuesta de tu API
   };
 
   // Calcular total de páginas para cada tipo
