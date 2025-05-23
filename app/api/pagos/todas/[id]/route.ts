@@ -6,30 +6,29 @@ import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  // Extrae el id de la URL
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/');
-  const id = pathParts[pathParts.length - 2]; // .../todas/[id]/route.ts
-
+  const id = pathParts[pathParts.length - 2];
   const type = url.searchParams.get('type') || 'saldo';
+
+  console.log("ID recibido:", id, "Tipo:", type);
 
   try {
     let purchase: any = null;
     if (type === 'payu') {
-      // Busca por referenceCode en la tabla de PayU
       const result = await db.payu
         .select()
         .from(orders)
         .where(eq(orders.referenceCode, id));
+      console.log("Resultado PayU:", result);
       purchase = result[0] || null;
     } else {
-      // Busca por id en la tabla de saldo
       const result = await db.transactions
         .select()
         .from(transactionsTable)
         .where(eq(transactionsTable.id, Number(id)));
+      console.log("Resultado saldo:", result);
       purchase = result[0] || null;
-      // Si existe, busca el email del usuario
       if (purchase && purchase.user_id) {
         const user = await db.users
           .select({ email: usersTable.email })
@@ -39,10 +38,12 @@ export async function GET(req: NextRequest) {
       }
     }
     if (!purchase) {
+      console.log("Compra no encontrada");
       return NextResponse.json({ error: 'Compra no encontrada' }, { status: 404 });
     }
     return NextResponse.json({ purchase });
   } catch (error) {
+    console.error("Error en detalle de compra:", error);
     return NextResponse.json({ error: 'Error al obtener la compra', detalle: String(error) }, { status: 500 });
   }
-}
+} 
