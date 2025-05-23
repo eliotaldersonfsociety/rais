@@ -36,33 +36,9 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
       items = []
     }
   }
-  // Filtra solo objetos válidos
   const validItems = Array.isArray(items)
     ? items.filter((item: any) => item && typeof item === "object" && "name" in item)
     : []
-
-  const purchasesPerPage = 5;
-
-  // Guardar en localStorage con timestamp
-  function saveToLocalStorage(key: string, data: any) {
-    const timestamp = Date.now();
-    localStorage.setItem(key, JSON.stringify({ data, timestamp }));
-  }
-
-  // Leer de localStorage y validar expiración (ej: 1 minuto)
-  function getFromLocalStorage(key: string, maxAgeMs: number = 60 * 1000) {
-    const item = localStorage.getItem(key);
-    if (!item) return null;
-    try {
-      const { data, timestamp } = JSON.parse(item);
-      if (Date.now() - timestamp < maxAgeMs) {
-        return data;
-      }
-    } catch {
-      // Si hay error, ignora el caché
-    }
-    return null;
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -75,11 +51,8 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
           <DialogDescription>
             {(() => {
               try {
-                // El timestamp viene en segundos, convertir a milisegundos
                 const timestamp = Number(purchase.created_at) * 1000;
                 const date = new Date(timestamp);
-
-                // Verificar si la fecha es válida y no es muy antigua
                 if (isNaN(date.getTime()) || date.getFullYear() < 2020) {
                   return `Realizada el ${new Date().toLocaleDateString('es-ES', {
                     year: 'numeric',
@@ -90,7 +63,6 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
                     hour12: false
                   })}`;
                 }
-
                 return `Realizada el ${date.toLocaleDateString('es-ES', {
                   year: 'numeric',
                   month: 'long',
