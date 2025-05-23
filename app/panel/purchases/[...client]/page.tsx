@@ -123,14 +123,16 @@ export default function PurchasesAdminPage() {
     });
     console.log("PATCH enviado para id:", selectedPurchase?.id, "nuevo status:", newStatus, "tipo:", activeTab);
 
-    // Polling real sobre el backend
-    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    await retryFetchUntilStatus(
-      selectedPurchase?.id!,
-      newStatus,
-      activeTab as 'saldo' | 'payu',
-      page
-    );
+    // Espera 1 segundo antes de empezar el polling
+    setTimeout(async () => {
+      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+      await retryFetchUntilStatus(
+        selectedPurchase?.id!,
+        newStatus,
+        activeTab as 'saldo' | 'payu',
+        page
+      );
+    }, 1000);
   };
 
   const retryFetchUntilStatus = async (
@@ -138,7 +140,7 @@ export default function PurchasesAdminPage() {
     expectedStatus: string,
     type: 'saldo' | 'payu',
     page: number,
-    maxRetries = 5
+    maxRetries = 10
   ) => {
     for (let i = 0; i < maxRetries; i++) {
       const url = `/api/pagos/todas?page=${page}&type=${type}`;
