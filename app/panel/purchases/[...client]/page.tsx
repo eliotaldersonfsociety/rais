@@ -92,14 +92,29 @@ export default function PurchasesAdminPage() {
     const payload = isPayu
       ? { referenceCode: selectedPurchase.id, status: newStatus, type: 'payu' }
       : { id: selectedPurchase.id, status: newStatus, type: 'saldo' };
+
+    // 1. Actualiza el estado en la base de datos
     await fetch('/api/pagos/actualizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    // Refresca la lista
+
+    // 2. Trae el detalle actualizado
+    const detailUrl = isPayu
+      ? `/api/pagos/todas/${selectedPurchase.id}?type=payu`
+      : `/api/pagos/todas/${selectedPurchase.id}?type=saldo`;
+    const res = await fetch(detailUrl, { headers: { 'Cache-Control': 'no-store' } });
+    const data = await res.json();
+
+    // 3. Actualiza el modal con el nuevo estado
+    setSelectedPurchase(data.purchase);
+
+    // 4. (Opcional) Refresca la lista general
     await handleRefresh();
-    setIsModalOpen(false);
+
+    // 5. (Opcional) Cierra el modal automáticamente
+    // setIsModalOpen(false);
   };
 
   // Calcular total de páginas para cada tipo
