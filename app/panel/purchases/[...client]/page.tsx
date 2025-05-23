@@ -121,18 +121,13 @@ export default function PurchasesAdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
-    console.log("PATCH enviado para id:", selectedPurchase?.id, "nuevo status:", newStatus, "tipo:", activeTab);
 
-    // Espera 1 segundo antes de empezar el polling
-    setTimeout(async () => {
+    // Espera un poco y recarga la lista desde el backend
+    setTimeout(() => {
+      const type = activeTab as 'saldo' | 'payu';
       const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-      await retryFetchUntilStatus(
-        selectedPurchase?.id!,
-        newStatus,
-        activeTab as 'saldo' | 'payu',
-        page
-      );
-    }, 1000);
+      fetchPurchases(page, type);
+    }, 500);
   };
 
   const retryFetchUntilStatus = async (
