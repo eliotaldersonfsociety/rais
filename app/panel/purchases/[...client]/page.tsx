@@ -102,11 +102,11 @@ export default function PurchasesAdminPage() {
       await fetch('/api/pagos/actualizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          isPayu
-            ? { referenceCode: selectedPurchase.referenceCode, status: newStatus, type: 'payu' }
-            : { id: selectedPurchase.id, status: newStatus, type: 'saldo' }
-        ),
+        body: JSON.stringify({
+          referenceCode: selectedPurchase.id,
+          status: newStatus,
+          type: 'payu'
+        }),
       });
       // Refresca la lista de compras
       const type = activeTab as 'saldo' | 'payu';
@@ -217,12 +217,7 @@ export default function PurchasesAdminPage() {
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {purchase.payuData?.transactionState === 'APPROVED'
-                      ? 'Completado'
-                      : purchase.status
-                        ? purchase.status
-                        : 'Pendiente'
-                    }
+                    {purchase.status || 'Pendiente'}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right text-xs sm:text-sm whitespace-nowrap">
