@@ -106,7 +106,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         });
     }
 
-
+    console.log("Transacciones devueltas al frontend:", transactions);
 
     // Opcional: puedes incluir datos del usuario en cada compra
     // (solo para saldo, para PayU ya viene el email)
