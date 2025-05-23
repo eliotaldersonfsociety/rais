@@ -5,9 +5,12 @@ import { users as usersTable } from '@/lib/usuarios/schema';
 import { eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const id = params.id;
+export async function GET(req: NextRequest) {
+  // Extrae el id de la URL
   const url = new URL(req.url);
+  const pathParts = url.pathname.split('/');
+  const id = pathParts[pathParts.length - 2]; // .../todas/[id]/route.ts
+
   const type = url.searchParams.get('type') || 'saldo';
 
   try {
@@ -42,4 +45,4 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   } catch (error) {
     return NextResponse.json({ error: 'Error al obtener la compra', detalle: String(error) }, { status: 500 });
   }
-} 
+}
