@@ -106,7 +106,6 @@ export default function PurchasesAdminPage() {
   };
 
   const handleChangeStatus = async (newStatus: string) => {
-    // 1. Actualiza el status localmente para el modal y la tabla
     if (selectedPurchase) {
       setSelectedPurchase({ ...selectedPurchase, status: newStatus });
     }
@@ -114,22 +113,33 @@ export default function PurchasesAdminPage() {
       p.id === selectedPurchase?.id ? { ...p, status: newStatus } : p
     ));
 
-    // 2. Cierra el modal inmediatamente
     setIsModalOpen(false);
 
-    // 3. Actualiza en el backend
     await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
 
-    // 4. Espera 500ms antes de recargar la lista para asegurar que el backend ya guardó el cambio
-    setTimeout(() => {
+    // Primer intento de recarga
+    setTimeout(async () => {
       if (activeTab === 'payu') {
-        fetchPurchases(currentPagePayu, 'payu');
+        await fetchPurchases(currentPagePayu, 'payu');
       } else {
-        fetchPurchases(currentPageSaldo, 'saldo');
+        await fetchPurchases(currentPageSaldo, 'saldo');
+      }
+
+      // Verifica si el estado cambió realmente en la UI
+      const updated = purchases.find(p => p.id === selectedPurchase?.id);
+      if (updated && updated.status !== newStatus) {
+        // Si no cambió, reintenta la recarga después de 500ms
+        setTimeout(() => {
+          if (activeTab === 'payu') {
+            fetchPurchases(currentPagePayu, 'payu');
+          } else {
+            fetchPurchases(currentPageSaldo, 'saldo');
+          }
+        }, 500);
       }
     }, 500);
   };
