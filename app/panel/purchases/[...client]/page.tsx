@@ -53,7 +53,16 @@ export default function PurchasesAdminPage() {
     try {
       const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`);
       const data = await res.json();
-      setPurchases(data.purchases || []);
+      if (type === 'payu') {
+        setPurchases(
+          (data.purchases || []).map((p: any) => ({
+            ...p,
+            referenceCode: p.referenceCode || p.id // usa el campo correcto según tu backend
+          }))
+        );
+      } else {
+        setPurchases(data.purchases || []);
+      }
     } catch (error) {
       setPurchases([]);
     }
