@@ -53,6 +53,7 @@ export default function PurchasesAdminPage() {
     const res = await fetch(url);
     const data = await res.json();
     console.log("Compras recibidas del backend:", data.purchases);
+  
     if (data.purchases) {
       const parsedPurchases = data.purchases.map((purchase: Purchase) => {
         try {
@@ -87,6 +88,7 @@ export default function PurchasesAdminPage() {
     setLoading(false);
     setIsRefreshing(false);
   };
+  
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -110,32 +112,34 @@ export default function PurchasesAdminPage() {
     if (!selectedPurchase) return;
   
     try {
-      // Actualiza el estado local inmediatamente
-      setPurchases(prevPurchases =>
-        prevPurchases.map(purchase =>
-          purchase.id === selectedPurchase.id ? { ...purchase, status: newStatus } : purchase
-        )
-      );
-  
       // Llama a la API para actualizar el estado en la base de datos
-      await fetch(`/api/pagos/todas/${selectedPurchase.id}/status`, {
+      const response = await fetch(`/api/pagos/todas/${selectedPurchase.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, type: activeTab }),
       });
   
-      // Cierra el modal
-      setIsModalOpen(false);
+      const data = await response.json();
+      console.log("Respuesta de la API:", data);
+  
+      if (data.ok) {
+        // Actualiza el estado local
+        setPurchases(prevPurchases =>
+          prevPurchases.map(purchase =>
+            purchase.id === selectedPurchase.id ? { ...purchase, status: newStatus } : purchase
+          )
+        );
+  
+        // Cierra el modal
+        setIsModalOpen(false);
+      } else {
+        console.error('Error al actualizar el estado:', data);
+      }
     } catch (error) {
       console.error('Error al actualizar el estado:', error);
-      // Opcional: Revertir el estado local si la llamada a la API falla
-      setPurchases(prevPurchases =>
-        prevPurchases.map(purchase =>
-          purchase.id === selectedPurchase.id ? { ...purchase, status: purchase.status } : purchase
-        )
-      );
     }
   };
+  
   
 
   const retryFetchUntilStatus = async (
