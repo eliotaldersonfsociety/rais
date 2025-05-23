@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
-import { usePurchaseStore } from '@/lib/usePurchaseStore';
+import { usePurchaseStore } from '@/lib/usePurchaseStore'
 
 interface PurchaseItem {
   id?: number;
@@ -37,11 +37,10 @@ interface Purchase {
 }
 
 export default function PurchasesAdminPage() {
-  const {
-    purchases,
-    fetchPurchases,
-    updatePurchaseStatus,
-  } = usePurchaseStore();
+  // Usa Zustand para el estado global
+  const purchases = usePurchaseStore(state => state.purchases);
+  const fetchPurchases = usePurchaseStore(state => state.fetchPurchases);
+  const updatePurchaseStatus = usePurchaseStore(state => state.updatePurchaseStatus);
 
   const [loading, setLoading] = useState(true);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
@@ -53,10 +52,17 @@ export default function PurchasesAdminPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const itemsPerPage = 10;
 
-  useEffect(() => {
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     const type = activeTab as 'saldo' | 'payu';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    fetchPurchases(page, type).then(() => setLoading(false));
+    await fetchPurchases(page, type);
+  };
+
+  useEffect(() => {
+    const type = activeTab === 'payu' ? 'payu' : 'saldo';
+    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+    fetchPurchases(page, type);
   }, [activeTab, currentPagePayu, currentPageSaldo, fetchPurchases]);
 
   const handleRowClick = (purchase: Purchase) => {
@@ -66,22 +72,11 @@ export default function PurchasesAdminPage() {
 
   const handleChangeStatus = async (newStatus: string) => {
     if (!selectedPurchase) return;
-
-    try {
-      await updatePurchaseStatus(selectedPurchase.id, newStatus, activeTab as 'saldo' | 'payu');
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Error al actualizar el estado:', error);
-    }
+    await updatePurchaseStatus(selectedPurchase.id, newStatus, activeTab as 'saldo' | 'payu');
+    setIsModalOpen(false);
   };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    const type = activeTab as 'saldo' | 'payu';
-    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    await fetchPurchases(page, type);
-    setIsRefreshing(false);
-  };
+  
+  
 
   const retryFetchUntilStatus = async (
     id: string | number,
@@ -97,6 +92,8 @@ export default function PurchasesAdminPage() {
       const updated = data.purchases.find((p: any) => p.id === id);
       console.log(`Intento ${i + 1}:`, updated?.status);
       if (updated && updated.status === expectedStatus) {
+        // Actualiza el estado global para que la UI lo muestre
+        await updatePurchaseStatus(id, expectedStatus, type);
         return true;
       }
       await new Promise((res) => setTimeout(res, 400));
@@ -141,8 +138,8 @@ export default function PurchasesAdminPage() {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {purchases.map((purchase, index) => {
-            const validItems = Array.isArray(purchase.products)
-              ? purchase.products
+            const validItems = Array.isArray(purchase.products) 
+              ? purchase.products 
               : typeof purchase.products === 'string'
                 ? JSON.parse(purchase.products)
                 : [];
@@ -158,7 +155,7 @@ export default function PurchasesAdminPage() {
                 </td>
                 <td className="px-4 py-3 text-xs sm:text-sm">
                   <div className="line-clamp-2">
-                    {validItems.length > 0
+                    {validItems.length > 0 
                       ? validItems.map((item: any) => item.name).join(", ")
                       : purchase.description || "Sin descripción"
                     }
@@ -188,8 +185,8 @@ export default function PurchasesAdminPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right text-xs sm:text-sm whitespace-nowrap">
-                  ${typeof purchase.total === 'number'
-                    ? purchase.total.toFixed(2)
+                  ${typeof purchase.total === 'number' 
+                    ? purchase.total.toFixed(2) 
                     : parseFloat(purchase.total || '0').toFixed(2)
                   }
                 </td>
@@ -205,11 +202,11 @@ export default function PurchasesAdminPage() {
     <DashboardLayouts>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <h2 className="text-2xl font-bold">Todas las Compras</h2>
-
-        <Tabs
-          defaultValue="saldo"
-          className="w-full"
-          value={activeTab}
+        
+        <Tabs 
+          defaultValue="saldo" 
+          className="w-full" 
+          value={activeTab} 
           onValueChange={(value) => {
             setActiveTab(value as 'saldo' | 'payu');
             if (value === 'saldo') {
@@ -316,10 +313,10 @@ export default function PurchasesAdminPage() {
       </div>
 
       {selectedPurchase && (
-        <PurchaseDetailsModal
-          purchase={selectedPurchase}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+        <PurchaseDetailsModal 
+          purchase={selectedPurchase} 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
           onStatusChange={handleChangeStatus}
         />
       )}
