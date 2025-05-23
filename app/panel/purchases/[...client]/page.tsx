@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
-import { usePurchaseStore } from './usePurchaseStore';
+import { usePurchaseStore } from '@/lib/usePurchaseStore';
 
 interface PurchaseItem {
   id?: number;
