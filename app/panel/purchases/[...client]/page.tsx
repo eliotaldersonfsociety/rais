@@ -54,15 +54,19 @@ export default function PurchasesAdminPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setLoading(true);
     const type = activeTab as 'saldo' | 'payu';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
     await fetchPurchases(page, type);
+    setIsRefreshing(false);
+    setLoading(false);
   };
 
   useEffect(() => {
     const type = activeTab === 'payu' ? 'payu' : 'saldo';
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-    fetchPurchases(page, type);
+    setLoading(true);
+    fetchPurchases(page, type).finally(() => setLoading(false));
   }, [activeTab, currentPagePayu, currentPageSaldo, fetchPurchases]);
 
   const handleRowClick = (purchase: Purchase) => {
