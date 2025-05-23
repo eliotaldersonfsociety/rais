@@ -23,6 +23,10 @@ export async function GET(req: NextRequest) {
       console.log("Resultado PayU:", result);
       purchase = result[0] || null;
     } else {
+      if (!id || isNaN(Number(id)) || !isFinite(Number(id))) {
+        console.log("ID inválido para saldo:", id);
+        return NextResponse.json({ error: 'ID inválido para saldo' }, { status: 400 });
+      }
       const result = await db.transactions
         .select()
         .from(transactionsTable)
