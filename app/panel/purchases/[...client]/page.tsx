@@ -52,6 +52,7 @@ export default function PurchasesAdminPage() {
     const url = `/api/pagos/todas?page=${page}&type=${type}`;
     const res = await fetch(url);
     const data = await res.json();
+    console.log("Compras recibidas del backend:", data.purchases);
     if (data.purchases) {
       const parsedPurchases = data.purchases.map((purchase: Purchase) => {
         try {
@@ -120,6 +121,7 @@ export default function PurchasesAdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
+    console.log("PATCH enviado para id:", selectedPurchase?.id, "nuevo status:", newStatus, "tipo:", activeTab);
 
     // Reintenta la recarga hasta que el estado cambie realmente
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
