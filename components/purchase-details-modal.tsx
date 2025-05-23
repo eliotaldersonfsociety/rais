@@ -40,6 +40,8 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
     ? items.filter((item: any) => item && typeof item === "object" && "name" in item)
     : []
 
+  console.log("Modal recibe:", purchase);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
