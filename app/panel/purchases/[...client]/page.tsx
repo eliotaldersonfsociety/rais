@@ -53,6 +53,7 @@ export default function PurchasesAdminPage() {
     try {
       const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`);
       const data = await res.json();
+      console.log('Compras recibidas del backend:', data.purchases);
       if (type === 'payu') {
         setPurchases(
           (data.purchases || []).map((p: any) => ({
@@ -63,6 +64,10 @@ export default function PurchasesAdminPage() {
       } else {
         setPurchases(data.purchases || []);
       }
+      // Log después de setPurchases
+      setTimeout(() => {
+        console.log('Estado de purchases después de setPurchases:', purchases);
+      }, 500);
     } catch (error) {
       setPurchases([]);
     }
@@ -94,19 +99,14 @@ export default function PurchasesAdminPage() {
     if (!selectedPurchase) return;
     try {
       const isPayu = activeTab === 'payu';
-      console.log(
-        activeTab === 'payu'
-          ? { referenceCode: selectedPurchase.referenceCode, status: newStatus, type: 'payu' }
-          : { id: selectedPurchase.id, status: newStatus, type: 'saldo' }
-      );
+      const payload = isPayu
+        ? { referenceCode: selectedPurchase.id, status: newStatus, type: 'payu' }
+        : { id: selectedPurchase.id, status: newStatus, type: 'saldo' };
+      console.log('Payload enviado al backend:', payload);
       await fetch('/api/pagos/actualizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          referenceCode: selectedPurchase.id,
-          status: newStatus,
-          type: 'payu'
-        }),
+        body: JSON.stringify(payload),
       });
       // Refresca la lista de compras
       const type = activeTab as 'saldo' | 'payu';
@@ -148,6 +148,7 @@ export default function PurchasesAdminPage() {
 
   // Renderizar la tabla de compras
   const renderPurchasesTable = (purchases: Purchase[]) => {
+    console.log('Renderizando purchases:', purchases);
     if (purchases.length === 0) {
       return (
         <div className="text-center py-8">
@@ -179,6 +180,7 @@ export default function PurchasesAdminPage() {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {purchases.map((purchase, index) => {
+            console.log('Render purchase:', purchase.id, 'status:', purchase.status);
             const validItems = Array.isArray(purchase.products) 
               ? purchase.products 
               : typeof purchase.products === 'string'
@@ -211,7 +213,7 @@ export default function PurchasesAdminPage() {
                 </td>
                 <td className="hidden sm:table-cell px-4 py-3 text-xs sm:text-sm">
                   <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    purchase.payuData?.transactionState === 'APPROVED' || purchase.status === 'Completado'
+                    purchase.status === 'Completado'
                       ? 'bg-green-100 text-green-800'
                       : purchase.status === 'Enviado'
                         ? 'bg-blue-100 text-blue-800'
