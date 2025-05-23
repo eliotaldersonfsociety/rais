@@ -5,6 +5,7 @@ interface Purchase {
   id: string | number;
   description: string;
   total: number;
+  amount?: number;
   created_at: number | string;
   products: string | any[];
   items?: any[];
@@ -40,6 +41,7 @@ export const usePurchaseStore = create<PurchaseState>()(
             try {
               return {
                 ...purchase,
+                total: purchase.amount || purchase.total,
                 products: typeof purchase.products === 'string'
                   ? JSON.parse(purchase.products.replace(/\n/g, '').trim())
                   : purchase.products,
@@ -49,6 +51,7 @@ export const usePurchaseStore = create<PurchaseState>()(
             } catch (error) {
               return {
                 ...purchase,
+                total: purchase.amount || purchase.total,
                 products: [{
                   name: purchase.description || 'Producto sin nombre',
                   price: purchase.total || 0,
