@@ -44,6 +44,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         .prepare();
 
       const results = await payuTransactions.execute();
+      console.log("PayU results:", results);
       totalCount = results.length;
       transactions = results.slice(offset, offset + limit).map(tx => ({
         ...tx,
@@ -58,6 +59,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         .prepare();
 
       const results = await regularTransactions.execute();
+      console.log("Saldo results:", results);
       totalCount = results.length;
 
       // Obtén todos los clerk_id únicos de las transacciones de la página actual
@@ -102,6 +104,8 @@ export async function GET(req: NextRequest): Promise<Response> {
           };
         });
     }
+
+    console.log("Transacciones devueltas al frontend:", transactions);
 
     // Opcional: puedes incluir datos del usuario en cada compra
     // (solo para saldo, para PayU ya viene el email)
