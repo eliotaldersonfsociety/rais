@@ -4,7 +4,7 @@ import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" //ddd
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 
 interface PurchaseItem {
@@ -37,109 +37,65 @@ interface Purchase {
 }
 
 export default function PurchasesAdminPage() {
-  const [purchases, setPurchases] = useState([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPageSaldo, setCurrentPageSaldo] = useState(1);
   const [currentPagePayu, setCurrentPagePayu] = useState(1);
-  const [activeTab, setActiveTab] = useState("saldo");
-  const [totalItems, setTotalItems] = useState({ saldo: 0, payu: 0 });
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'saldo' | 'payu'>('saldo');
   const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState({ saldo: 0, payu: 0 });
 
+  // Traer compras del backend
   const fetchPurchases = async (page: number, type: 'saldo' | 'payu') => {
     setLoading(true);
     try {
       const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`);
       const data = await res.json();
-      console.log('Compras recibidas del backend:', data.purchases);
-      if (type === 'payu') {
-        setPurchases(
-          (data.purchases || []).map((p: any) => ({
-            ...p,
-            referenceCode: p.referenceCode || p.id // usa el campo correcto según tu backend
-          }))
-        );
-      } else {
-        setPurchases(data.purchases || []);
-      }
-      // Log después de setPurchases
-      setTimeout(() => {
-        console.log('Estado de purchases después de setPurchases:', purchases);
-      }, 500);
+      setPurchases(data.purchases || []);
+      setTotalItems((prev) => ({ ...prev, [type]: data.pagination?.total || 0 }));
     } catch (error) {
       setPurchases([]);
     }
     setLoading(false);
   };
 
+  // Efecto para cargar compras al cambiar pestaña o página
   useEffect(() => {
-    const type = activeTab === 'payu' ? 'payu' : 'saldo';
+    const type = activeTab;
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
     fetchPurchases(page, type);
   }, [activeTab, currentPagePayu, currentPageSaldo]);
 
+  // Refrescar manualmente
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    setLoading(true);
-    const type = activeTab as 'saldo' | 'payu';
+    const type = activeTab;
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
     await fetchPurchases(page, type);
-    setIsRefreshing(false);
-    setLoading(false);
   };
 
+  // Abrir modal de detalles
   const handleRowClick = (purchase: Purchase) => {
     setSelectedPurchase(purchase);
     setIsModalOpen(true);
   };
 
+  // Cambiar estado de la compra
   const handleChangeStatus = async (newStatus: string) => {
     if (!selectedPurchase) return;
-    try {
-      const isPayu = activeTab === 'payu';
-      const payload = isPayu
-        ? { referenceCode: selectedPurchase.id, status: newStatus, type: 'payu' }
-        : { id: selectedPurchase.id, status: newStatus, type: 'saldo' };
-      console.log('Payload enviado al backend:', payload);
-      await fetch('/api/pagos/actualizar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      // Refresca la lista de compras
-      const type = activeTab as 'saldo' | 'payu';
-      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-      await fetchPurchases(page, type);
-    } catch (error) {
-      // Puedes mostrar un toast de error aquí si lo deseas
-    }
+    const isPayu = activeTab === 'payu';
+    const payload = isPayu
+      ? { referenceCode: selectedPurchase.id, status: newStatus, type: 'payu' }
+      : { id: selectedPurchase.id, status: newStatus, type: 'saldo' };
+    await fetch('/api/pagos/actualizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    // Refresca la lista
+    await handleRefresh();
     setIsModalOpen(false);
-  };
-  
-  
-
-  const retryFetchUntilStatus = async (
-    id: string | number,
-    expectedStatus: string,
-    type: 'saldo' | 'payu',
-    page: number,
-    maxRetries = 10
-  ) => {
-    for (let i = 0; i < maxRetries; i++) {
-      const url = `/api/pagos/todas?page=${page}&type=${type}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const updated = data.purchases.find((p: any) => p.id === id);
-      console.log(`Intento ${i + 1}:`, updated?.status);
-      if (updated && updated.status === expectedStatus) {
-        // Actualiza el estado global para que la UI lo muestre
-        return true;
-      }
-      await new Promise((res) => setTimeout(res, 400));
-    }
-    return false;
   };
 
   // Calcular total de páginas para cada tipo
@@ -148,7 +104,6 @@ export default function PurchasesAdminPage() {
 
   // Renderizar la tabla de compras
   const renderPurchasesTable = (purchases: Purchase[]) => {
-    console.log('Renderizando purchases:', purchases);
     if (purchases.length === 0) {
       return (
         <div className="text-center py-8">
@@ -161,47 +116,35 @@ export default function PurchasesAdminPage() {
         <thead className="bg-gray-50">
           <tr>
             <th>Usuario</th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              ID
-            </th>
-            <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Producto
-            </th>
-            <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fecha
-            </th>
-            <th scope="col" className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Estado
-            </th>
-            <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Total
-            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {purchases.map((purchase, index) => {
-            console.log('Render purchase:', purchase.id, 'status:', purchase.status);
-            const validItems = Array.isArray(purchase.products) 
-              ? purchase.products 
+            const validItems = Array.isArray(purchase.products)
+              ? purchase.products
               : typeof purchase.products === 'string'
                 ? JSON.parse(purchase.products)
                 : [];
             return (
               <tr
-                key={`${purchase.payuData ? 'payu' : 'saldo'}_${purchase.id}_${index}`}
+                key={`${purchase.referenceCode || purchase.id}_${index}`}
                 onClick={() => handleRowClick(purchase)}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
-                <td>{purchase.user_email || "-"}</td>
+                <td>{purchase.user_email || '-'}</td>
                 <td className="px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
-                  {purchase.payuData ? `PayU-${purchase.id}` : `#${purchase.id}`}
+                  {activeTab === 'payu' ? `PayU-${purchase.id}` : `#${purchase.id}`}
                 </td>
                 <td className="px-4 py-3 text-xs sm:text-sm">
                   <div className="line-clamp-2">
-                    {validItems.length > 0 
-                      ? validItems.map((item: any) => item.name).join(", ")
-                      : purchase.description || "Sin descripción"
-                    }
+                    {validItems.length > 0
+                      ? validItems.map((item: any) => item.name).join(', ')
+                      : purchase.description || 'Sin descripción'}
                   </div>
                 </td>
                 <td className="hidden sm:table-cell px-4 py-3 text-xs sm:text-sm whitespace-nowrap">
@@ -223,8 +166,8 @@ export default function PurchasesAdminPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right text-xs sm:text-sm whitespace-nowrap">
-                  ${typeof purchase.total === 'number' 
-                    ? purchase.total.toFixed(2) 
+                  ${typeof purchase.total === 'number'
+                    ? purchase.total.toFixed(2)
                     : parseFloat(purchase.total || '0').toFixed(2)
                   }
                 </td>
@@ -240,11 +183,10 @@ export default function PurchasesAdminPage() {
     <DashboardLayouts>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <h2 className="text-2xl font-bold">Todas las Compras</h2>
-        
-        <Tabs 
-          defaultValue="saldo" 
-          className="w-full" 
-          value={activeTab} 
+        <Tabs
+          defaultValue="saldo"
+          className="w-full"
+          value={activeTab}
           onValueChange={(value) => {
             setActiveTab(value as 'saldo' | 'payu');
             if (value === 'saldo') {
@@ -263,7 +205,6 @@ export default function PurchasesAdminPage() {
               PayU ({totalItems.payu})
             </TabsTrigger>
           </TabsList>
-
           <TabsContent value="saldo" className="mt-4">
             <Card>
               <div className="p-4">
@@ -305,7 +246,6 @@ export default function PurchasesAdminPage() {
               </div>
             </Card>
           </TabsContent>
-
           <TabsContent value="payu" className="mt-4">
             <Card>
               <div className="p-4">
@@ -349,12 +289,11 @@ export default function PurchasesAdminPage() {
           </TabsContent>
         </Tabs>
       </div>
-
       {selectedPurchase && (
-        <PurchaseDetailsModal 
-          purchase={selectedPurchase} 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+        <PurchaseDetailsModal
+          purchase={selectedPurchase}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
           onStatusChange={handleChangeStatus}
         />
       )}
