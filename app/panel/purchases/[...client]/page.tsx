@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 interface PurchaseItem {
   id?: number;
@@ -77,6 +78,7 @@ export default function PurchasesAdminPage() {
     const type = activeTab;
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
     await fetchPurchases(page, type);
+    console.log("Lista de compras después de refrescar:", purchases);
   };
 
   // Abrir modal de detalles
@@ -106,14 +108,11 @@ export default function PurchasesAdminPage() {
       : `/api/pagos/todas/${selectedPurchase.id}?type=saldo`;
     const res = await fetch(detailUrl, { headers: { 'Cache-Control': 'no-store' } });
     const data = await res.json();
-
-    // 3. Actualiza el modal con el nuevo estado
+    console.log("Detalle actualizado recibido:", data.purchase);
     setSelectedPurchase(data.purchase);
-
-    // 4. (Opcional) Refresca la lista general
     await handleRefresh();
 
-    // 5. (Opcional) Cierra el modal automáticamente
+    // 4. (Opcional) Cierra el modal automáticamente
     // setIsModalOpen(false);
   };
 
@@ -174,15 +173,9 @@ export default function PurchasesAdminPage() {
                   })}
                 </td>
                 <td className="hidden sm:table-cell px-4 py-3 text-xs sm:text-sm">
-                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    purchase.status === 'Completado'
-                      ? 'bg-green-100 text-green-800'
-                      : purchase.status === 'Enviado'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <Badge>
                     {purchase.status || 'Pendiente'}
-                  </span>
+                  </Badge>
                 </td>
                 <td className="px-4 py-3 text-right text-xs sm:text-sm whitespace-nowrap">
                   ${typeof purchase.total === 'number'
