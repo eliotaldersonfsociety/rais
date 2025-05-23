@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest) {
   const pathParts = url.pathname.split('/');
   const id = pathParts[pathParts.length - 2]; // .../todas/[id]/status
 
-  console.log("PATCH recibido:", { id, status, type });
+  console.log("PATCH recibido:", { id, status, type }); // ojo
 
   let result;
   if (type === 'payu') {
