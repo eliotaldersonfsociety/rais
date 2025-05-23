@@ -47,7 +47,7 @@ export default function PurchasesAdminPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const itemsPerPage = 10;
 
-  const fetchPurchases = async (page, type) => {
+  const fetchPurchases = async (page: number, type: 'saldo' | 'payu') => {
     setLoading(true);
     try {
       const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`);
