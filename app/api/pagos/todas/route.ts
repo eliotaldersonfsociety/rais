@@ -80,6 +80,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       transactions = results
         .slice(offset, offset + limit)
         .map(tx => {
+          console.log("tx.id:", tx.id, "tx.status:", tx.status);
           let parsedProducts: ProductItem[];
           try {
             if (typeof tx.products === 'string') {
@@ -100,12 +101,12 @@ export async function GET(req: NextRequest): Promise<Response> {
             ...tx,
             user_email: userIdToEmail[tx.user_id] || tx.user_id || "",
             products: parsedProducts,
-            status: tx.status || 'Pendiente'
+            status: tx.status
           };
         });
     }
 
-    console.log("Transacciones devueltas al frontend:", transactions);
+
 
     // Opcional: puedes incluir datos del usuario en cada compra
     // (solo para saldo, para PayU ya viene el email)
