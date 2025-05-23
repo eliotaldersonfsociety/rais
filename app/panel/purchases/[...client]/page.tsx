@@ -107,20 +107,36 @@ export default function PurchasesAdminPage() {
   };
 
   const handleChangeStatus = async (newStatus: string) => {
-    await fetch(`/api/pagos/todas/${selectedPurchase?.id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus, type: activeTab }),
-    });
-
-    // Espera un poco para asegurar que la base de datos se actualizó
-    setTimeout(async () => {
-      const type = activeTab as 'saldo' | 'payu';
-      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-      await fetchPurchases(page, type); // <-- recarga toda la lista
+    if (!selectedPurchase) return;
+  
+    try {
+      // Actualiza el estado local inmediatamente
+      setPurchases(prevPurchases =>
+        prevPurchases.map(purchase =>
+          purchase.id === selectedPurchase.id ? { ...purchase, status: newStatus } : purchase
+        )
+      );
+  
+      // Llama a la API para actualizar el estado en la base de datos
+      await fetch(`/api/pagos/todas/${selectedPurchase.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, type: activeTab }),
+      });
+  
+      // Cierra el modal
       setIsModalOpen(false);
-    }, 800);
+    } catch (error) {
+      console.error('Error al actualizar el estado:', error);
+      // Opcional: Revertir el estado local si la llamada a la API falla
+      setPurchases(prevPurchases =>
+        prevPurchases.map(purchase =>
+          purchase.id === selectedPurchase.id ? { ...purchase, status: purchase.status } : purchase
+        )
+      );
+    }
   };
+  
 
   const retryFetchUntilStatus = async (
     id: string | number,
