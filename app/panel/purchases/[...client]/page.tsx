@@ -123,7 +123,7 @@ export default function PurchasesAdminPage() {
     });
     console.log("PATCH enviado para id:", selectedPurchase?.id, "nuevo status:", newStatus, "tipo:", activeTab);
 
-    // Reintenta la recarga hasta que el estado cambie realmente
+    // Polling real sobre el backend
     const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
     await retryFetchUntilStatus(
       selectedPurchase?.id!,
@@ -138,17 +138,24 @@ export default function PurchasesAdminPage() {
     expectedStatus: string,
     type: 'saldo' | 'payu',
     page: number,
-    maxRetries = 3
+    maxRetries = 5
   ) => {
     for (let i = 0; i < maxRetries; i++) {
-      await fetchPurchases(page, type);
-      // Espera a que React actualice el estado
-      await new Promise(res => setTimeout(res, 200));
-      const updated = purchases.find(p => p.id === id);
+      const url = `/api/pagos/todas?page=${page}&type=${type}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const updated = data.purchases.find((p: any) => p.id === id);
+      console.log(`Intento ${i + 1}:`, updated?.status);
       if (updated && updated.status === expectedStatus) {
+        // Actualiza el estado global para que la UI lo muestre
+        setPurchases((prev) =>
+          prev.map((p) =>
+            p.id === id ? { ...p, status: expectedStatus } : p
+          )
+        );
         return true;
       }
-      await new Promise(res => setTimeout(res, 400));
+      await new Promise((res) => setTimeout(res, 400));
     }
     return false;
   };
