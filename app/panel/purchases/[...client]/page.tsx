@@ -4,7 +4,7 @@ import { DashboardLayouts } from "@/components/dashboard-layouts"
 import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" //ddd
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -108,7 +108,9 @@ export default function PurchasesAdminPage() {
       : `/api/pagos/todas/${selectedPurchase.id}?type=saldo`;
     const res = await fetch(detailUrl, { headers: { 'Cache-Control': 'no-store' } });
     const data = await res.json();
-    console.log("Detalle actualizado recibido:", data.purchase);
+
+    console.log("Modal debería mostrar:", data.purchase);
+
     setSelectedPurchase(data.purchase);
     await handleRefresh();
 
