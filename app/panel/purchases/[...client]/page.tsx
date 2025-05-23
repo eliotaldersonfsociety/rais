@@ -122,12 +122,15 @@ export default function PurchasesAdminPage() {
       body: JSON.stringify({ status: newStatus, type: activeTab }),
     });
 
-    // Espera un poco y recarga la lista desde el backend
-    setTimeout(() => {
-      const type = activeTab as 'saldo' | 'payu';
-      const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-      fetchPurchases(page, type);
-    }, 500);
+    // Ahora usa el polling para esperar a que el backend devuelva el estado correcto
+    const type = activeTab as 'saldo' | 'payu';
+    const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
+    await retryFetchUntilStatus(
+      selectedPurchase?.id!,
+      newStatus,
+      type,
+      page
+    );
   };
 
   const retryFetchUntilStatus = async (
