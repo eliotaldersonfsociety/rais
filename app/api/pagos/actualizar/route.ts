@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { eq } from 'drizzle-orm';
-import { transactions } from '@/lib/transaction/schema';
+import { transactions } from '@/lib/transaction/schema'; //k
 import { orders } from '@/lib/payu/schema';
 
 export async function POST(req: NextRequest) {
