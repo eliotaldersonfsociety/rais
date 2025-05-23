@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { DashboardLayouts } from "@/components/dashboard-layouts"
-import { PurchaseDetailsModal } from "@/components/purchase-details-modal"
+import { PurchaseDetailsModal } from "@/components/purchase-details-modal" //vamos
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
