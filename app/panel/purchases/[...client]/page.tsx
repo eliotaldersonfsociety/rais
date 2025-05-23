@@ -149,7 +149,7 @@ export default function PurchasesAdminPage() {
     return false;
   };
 
-  const fetchSinglePurchase = async (id, type) => {
+  const fetchSinglePurchase = async (id: string | number, type: 'saldo' | 'payu') => {
     const res = await fetch(`/api/pagos/todas/${id}?type=${type}`);
     const data = await res.json();
     // Actualiza solo esa compra en el array de compras
