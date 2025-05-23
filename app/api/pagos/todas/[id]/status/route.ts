@@ -17,15 +17,18 @@ export async function PATCH(req: NextRequest) {
 
   let result;
   if (type === 'payu') {
+    console.log("Actualizando payu_tab con referenceCode:", id);
     result = await db.payu.update(orders)
       .set({ status })
       .where(eq(orders.referenceCode, id));
+    console.log("Resultado update payu_tab:", result);
   } else {
+    console.log("Actualizando transactions con id:", id);
     result = await db.transactions.update(transactions)
       .set({ status })
       .where(eq(transactions.id, Number(id)));
+    console.log("Resultado update transactions:", result);
   }
-  console.log("Resultado de la actualización:", result);
 
   return NextResponse.json({ ok: true, result });
 }
