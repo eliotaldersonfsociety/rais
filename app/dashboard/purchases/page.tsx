@@ -210,7 +210,7 @@ export default function PurchasesAdminPage() {
   };
 
   return (
-    <DashboardLayouts>
+    <DashboardLayout>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <h2 className="text-2xl font-bold">Todas las Compras</h2>
         <Tabs
@@ -326,6 +326,6 @@ export default function PurchasesAdminPage() {
           onStatusChange={handleChangeStatus}
         />
       )}
-    </DashboardLayouts>
+    </DashboardLayout>
   );
 }
