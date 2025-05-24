@@ -24,6 +24,7 @@ interface Purchase {
   referenceCode?: string;
   description: string;
   total: number;
+  updated_at: number | string;
   created_at: number | string;
   products: string | PurchaseItem[];
   items?: PurchaseItem[];
@@ -98,20 +99,20 @@ export default function PurchasesAdminPage() {
     if (!selectedPurchase) return;
     
     // Actualización optimista
-    setPurchases(prevPurchases => 
-      prevPurchases.map(purchase => 
-        purchase.id === selectedPurchase.id 
-          ? { ...purchase, status: newStatus } 
-          : purchase
-      )
-    );
+    setPurchases(prev => prev.map(p =>
+      p.id === selectedPurchase.id ? { ...p, status: newStatus } : p
+    ));
+
+    setIsModalOpen(false);
   
     // Actualización en backend
     const isPayu = activeTab === 'payu';
     const payload = isPayu
       ? { referenceCode: selectedPurchase.id, status: newStatus, type: 'payu' }
       : { id: selectedPurchase.id, status: newStatus, type: 'saldo' };
-  
+
+
+  try {
     await fetch('/api/pagos/actualizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,9 +120,19 @@ export default function PurchasesAdminPage() {
     });
   
     // Recarga de datos frescos
-    setIsModalOpen(false);
-    await handleRefresh();
-  };
+    const page = isPayu ? currentPagePayu : currentPageSaldo;
+    const res = await fetch(`/api/pagos/todas?page=${page}&type=${activeTab}&rand=${Math.random()}`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    const data = await res.json();
+    setPurchases(data.purchases);
+  } catch (error) {
+    setPurchases(prev => prev.map(p =>
+      p.id === selectedPurchase?.id ? { ...p, status: selectedPurchase?.status } : p
+    ));
+    console.error('Error al actualizar el estado:', error);
+  }
+};
   // Calcular total de páginas para cada tipo
   const totalPagesSaldo = Math.ceil(totalItems.saldo / itemsPerPage);
   const totalPagesPayu = Math.ceil(totalItems.payu / itemsPerPage);
@@ -157,7 +168,7 @@ export default function PurchasesAdminPage() {
                 : [];
             return (
               <tr
-                key={`${purchase.referenceCode || purchase.id}_${purchase.status}`}
+                key={`${purchase.referenceCode || purchase.id}_${purchase.status}_${purchase.updated_at}`}
                 onClick={() => handleRowClick(purchase)}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
