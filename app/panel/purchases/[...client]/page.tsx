@@ -55,8 +55,8 @@ export default function PurchasesAdminPage() {
       try {
         const type = activeTab;
         const page = activeTab === 'payu' ? currentPagePayu : currentPageSaldo;
-        const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}`, {
-          headers: { 'Cache-Control': 'no-store' }
+        const res = await fetch(`/api/pagos/todas?page=${page}&type=${type}&timestamp=${Date.now()}`, {
+          headers: { 'Cache-Control': 'no-cache' }
         });
         const data = await res.json();
         setPurchases(Array.isArray(data.purchases) ? [...data.purchases] : []);
@@ -96,31 +96,32 @@ export default function PurchasesAdminPage() {
   // Cambiar estado de la compra
   const handleChangeStatus = async (newStatus: string) => {
     if (!selectedPurchase) return;
+    
+    // Actualización optimista
+    setPurchases(prevPurchases => 
+      prevPurchases.map(purchase => 
+        purchase.id === selectedPurchase.id 
+          ? { ...purchase, status: newStatus } 
+          : purchase
+      )
+    );
+  
+    // Actualización en backend
     const isPayu = activeTab === 'payu';
     const payload = isPayu
       ? { referenceCode: selectedPurchase.id, status: newStatus, type: 'payu' }
       : { id: selectedPurchase.id, status: newStatus, type: 'saldo' };
-
-    // 1. Actualiza el estado en la base de datos
+  
     await fetch('/api/pagos/actualizar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-
-    // 2. Trae el detalle actualizado para el modal
-    const detailUrl = isPayu
-      ? `/api/pagos/todas/${selectedPurchase.id}?type=payu`
-      : `/api/pagos/todas/${selectedPurchase.id}?type=saldo`;
-    const res = await fetch(detailUrl, { headers: { 'Cache-Control': 'no-store' } });
-    const data = await res.json();
-    setSelectedPurchase(data.purchase);
+  
+    // Recarga de datos frescos
     setIsModalOpen(false);
-
-    // 3. Refresca la lista general inmediatamente
     await handleRefresh();
   };
-
   // Calcular total de páginas para cada tipo
   const totalPagesSaldo = Math.ceil(totalItems.saldo / itemsPerPage);
   const totalPagesPayu = Math.ceil(totalItems.payu / itemsPerPage);
@@ -156,7 +157,7 @@ export default function PurchasesAdminPage() {
                 : [];
             return (
               <tr
-                key={`${purchase.referenceCode || purchase.id}_${index}`}
+                key={`${purchase.referenceCode || purchase.id}_${purchase.status}`}
                 onClick={() => handleRowClick(purchase)}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
