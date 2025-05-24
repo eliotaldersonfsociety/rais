@@ -208,10 +208,28 @@ export default function PanelPage() {
     }
   };
 
-  // AHORA SÍ, los returns condicionales
-  if (!isLoaded) return <div>Cargando...</div>;
-  if (!user) return <div>No estás autenticado</div>;
-  if (!user.publicMetadata?.isAdmin) return <div>No tienes acceso a este panel.</div>;
+  useEffect(() => {
+    if (hayProductosInvalidos) {
+      toast.error("Hay productos inválidos en tu carrito. Por favor, actualiza tu carrito.");
+    }
+  }, [hayProductosInvalidos]);
+
+  if (!isLoaded) return (
+    <DashboardLayout>
+      <div className="flex flex-col gap-4 p-4 md:p-8">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} height={100} className="rounded-lg" />
+          ))}
+        </div>
+        <Skeleton height={150} className="rounded-lg" />
+        <Skeleton height={400} className="rounded-lg" />
+      </div>
+    </DashboardLayout>
+  );
+
+  if (!user) return <DashboardLayout><div className="p-8 text-center">No estás autenticado</div></DashboardLayout>;
+  if (!user.publicMetadata?.isAdmin) return <DashboardLayout><div className="p-8 text-center">No tienes acceso a este panel.</div></DashboardLayout>;
 
   // Ahora sí, el return principal
   return (
@@ -226,47 +244,107 @@ export default function PanelPage() {
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
               <div className="flex flex-row items-center justify-between pb-2">
+                {loading ? (
+                <Skeleton width={120} height={20} />
+              ) : (
                 <div className="text-sm font-medium">Ingresos Globales:</div>
+              )}
               </div>
-              <div className="text-xl sm:text-2xl font-bold">${saldo !== null ? Number(saldo).toFixed(2) : '0.00'}</div>
+              {loading ? (
+              <Skeleton width={100} height={32} />
+            ) : (
+              <div className="text-xl sm:text-2xl font-bold">
+                ${saldo !== null ? Number(saldo).toFixed(2) : '0.00'}
+              </div>
+            )}
+            {loading ? (
+              <Skeleton width={140} height={16} className="mt-1" />
+            ) : (
               <div className="text-xs text-muted-foreground">+15% desde el mes pasado</div>
-            </div>
+            )}
 
             <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
-              <div className="flex flex-row items-center justify-between pb-2">
+            <div className="flex flex-row items-center justify-between pb-2">
+              {loading ? (
+                <Skeleton width={120} height={20} />
+              ) : (
                 <div className="text-sm font-medium">Envios Pendientes</div>
-              </div>
+              )}
+            </div>
+            {loading ? (
+              <Skeleton width={100} height={32} />
+            ) : (
               <div className="text-xl sm:text-2xl font-bold">{lastPurchaseId}</div>
+            )}
+            {loading ? (
+              <Skeleton width={140} height={16} className="mt-1" />
+            ) : (
               <div className="text-xs text-muted-foreground">Última compra: {lastPurchaseDate}</div>
-            </div>
-
-            <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
-              <div className="flex flex-row items-center justify-between pb-2">
-                <div className="text-sm font-medium">Visitantes en la Web:</div>
-              </div>
-              <div className="text-xl sm:text-2xl font-bold">{lastWishlistId === 0 ? 'Sin productos' : lastWishlistId}</div>
-              <div className="text-xs text-muted-foreground">Numero de Producto</div>
-            </div>
-
-            <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
-              <div className="flex flex-row items-center justify-between pb-2">
-                <div className="text-sm font-medium">Administrador:</div>
-              </div>
-              <div className="text-xl sm:text-2xl font-bold">{name}</div>
-              <div className="text-xs text-muted-foreground">{lastname}</div>
-              <div className="text-xs text-muted-foreground">{email}</div>
-            </div>
+            )}
           </div>
+
+            <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
+            <div className="flex flex-row items-center justify-between pb-2">
+              {loading ? (
+                <Skeleton width={120} height={20} />
+              ) : (
+                <div className="text-sm font-medium">Visitantes en la Web:</div>
+              )}
+            </div>
+            {loading ? (
+              <Skeleton width={100} height={32} />
+            ) : (
+              <div className="text-xl sm:text-2xl font-bold">
+                {lastWishlistId === 0 ? 'Sin productos' : lastWishlistId}
+              </div>
+            )}
+            {loading ? (
+              <Skeleton width={140} height={16} className="mt-1" />
+            ) : (
+              <div className="text-xs text-muted-foreground">Numero de Producto</div>
+            )}
+          </div>
+
+            <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
+            <div className="flex flex-row items-center justify-between pb-2">
+              {loading ? (
+                <Skeleton width={120} height={20} />
+              ) : (
+                <div className="text-sm font-medium">Administrador:</div>
+              )}
+            </div>
+            {loading ? (
+              <>
+                <Skeleton width={100} height={32} />
+                <Skeleton width={80} height={16} className="mt-1" />
+                <Skeleton width={120} height={16} className="mt-1" />
+              </>
+            ) : (
+              <>
+                <div className="text-xl sm:text-2xl font-bold">{user.firstName}</div>
+                <div className="text-xs text-muted-foreground">{user.lastName}</div>
+                <div className="text-xs text-muted-foreground">{user.primaryEmailAddress?.emailAddress}</div>
+              </>
+            )}
+          </div>
+        </div>
 
           {/* Mensaje de bienvenida */}
           <div className="rounded-lg border shadow-sm">
+          {loading ? (
+            <div className="p-6">
+              <Skeleton height={28} width={200} />
+              <Skeleton height={20} width={300} className="mt-2" />
+            </div>
+          ) : (
             <div className="p-6">
               <h2 className="text-xl font-semibold">Bienvenido a tu Panel</h2>
               <p className="mt-2 text-muted-foreground">
-                Antonio, aquí podrás gestionar a los usuarios, revisar sus compras, recargar saldo y más. Utiliza el menú lateral para navegar.
+                {user.firstName}, aquí podrás gestionar a los usuarios, revisar sus compras, recargar saldo y más.
               </p>
             </div>
-          </div>
+          )}
+        </div>
 
           {/* Sección de compras */}
           <div className="rounded-lg border shadow-sm">
