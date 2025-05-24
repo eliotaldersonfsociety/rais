@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { DashboardLayouts } from "@/components/dashboard-layouts"
+import { DashboardLayouts } from "@/components/dashboard-layout"
 import { PurchaseDetailsModal } from "@/components/purchase-details-modales"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
