@@ -1,6 +1,6 @@
 "use client"
 
-import { Package, User, CreditCard, MapPin } from "lucide-react"
+import { Package, User, CreditCard, MapPin, RefreshCcw } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
 
 interface PurchaseDetailsModalProps {
   purchase: any
@@ -21,6 +22,8 @@ interface PurchaseDetailsModalProps {
 }
 
 export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange }: PurchaseDetailsModalProps) {
+  const [loading, setLoading] = useState(false)
+
   if (!purchase) return null
 
   // Lógica robusta para obtener los productos
@@ -208,8 +211,11 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
 
         <DialogFooter>
           <Button onClick={onClose}>Cerrar</Button>
-          <Button onClick={() => onStatusChange && onStatusChange('Enviado')}>
-            Marcar como Enviado
+          <Button 
+          onClick={() => ('Enviado')}
+          disabled={loading}
+          >
+            {loading ? <RefreshCcw className="animate-spin" /> : 'Marcar como Enviado'}
           </Button>
         </DialogFooter>
       </DialogContent>
