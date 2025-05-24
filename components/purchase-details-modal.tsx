@@ -225,8 +225,13 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
           <Button 
             onClick={() => handleStatusChange('Enviado')}
             disabled={loading}
+            variant={purchase?.status === 'Enviado' ? 'default' : 'outline'}
           >
-            {loading ? <RefreshCcw className="animate-spin" /> : 'Marcar como Enviado'}
+            {loading ? (
+              <RefreshCcw className="animate-spin" /> 
+            ) : (
+              purchase.status ===  'Enviado' ? '✅ Enviado' : 'Marcar como Enviado'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
