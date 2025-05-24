@@ -215,7 +215,7 @@ export default function PanelPage() {
   }, [hayProductosInvalidos]);
 
   if (!isLoaded) return (
-    <DashboardLayout>
+    <DashboardLayouts>
       <div className="flex flex-col gap-4 p-4 md:p-8">
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -225,7 +225,7 @@ export default function PanelPage() {
         <Skeleton height={150} className="rounded-lg" />
         <Skeleton height={400} className="rounded-lg" />
       </div>
-    </DashboardLayout>
+    </DashboardLayouts>
   );
 
   if (!user) return <DashboardLayout><div className="p-8 text-center">No estás autenticado</div></DashboardLayout>;
