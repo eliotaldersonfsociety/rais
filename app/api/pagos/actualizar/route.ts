@@ -5,43 +5,29 @@ import { eq } from 'drizzle-orm';
 import { transactions } from '@/lib/transaction/schema';
 import { orders } from '@/lib/payu/schema';
 
+// app/api/pagos/actualizar/route.ts
 export async function POST(req: NextRequest) {
-  const { id, referenceCode, status, type } = await req.json();
-  if ((!id && !referenceCode) || !status || !type) {
-    return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
-  }
-
-  try {
-    let result;
-    if (type === 'saldo') {
-      // Actualiza en transactions por id (número)
-      result = await db.transactions
-        .update(transactions)
-        .set({ status })
-        .where(eq(transactions.id, Number(id)));
-      // Haz un select del registro actualizado
-      const updated = await db.transactions
-        .select()
-        .from(transactions)
-        .where(eq(transactions.id, Number(id)));
-      return NextResponse.json({ ok: true, updated });
-    } else if (type === 'payu') {
-      // Actualiza en payu_tab por referenceCode (string)
-      result = await db.payu
-        .update(orders)
-        .set({ status })
-        .where(eq(orders.referenceCode, referenceCode));
-      // Haz un select del registro actualizado
-      const updated = await db.payu
-        .select()
-        .from(orders)
-        .where(eq(orders.referenceCode, referenceCode));
-      return NextResponse.json({ ok: true, updated });
-    } else {
-      return NextResponse.json({ error: 'Tipo de compra inválido' }, { status: 400 });
+    const { id, referenceCode, status, type } = await req.json();
+    
+    try {
+      if (type === 'saldo') {
+        await db.transactions
+          .update(transactions)
+          .set({ status })
+          .where(eq(transactions.id, Number(id)));
+      } else {
+        await db.payu
+          .update(orders)
+          .set({ status })
+          .where(eq(orders.referenceCode, referenceCode));
+      }
+      
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      return NextResponse.json(
+        { error: 'Error al actualizar el estado' },
+        { status: 500 }
+      );
     }
-  } catch (error) {
-    console.error('Error en actualización:', error);
-    return NextResponse.json({ error: 'Error en la base de datos', detalle: String(error) }, { status: 500 });
   }
-}
