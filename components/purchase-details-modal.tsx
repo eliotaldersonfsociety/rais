@@ -24,26 +24,37 @@ interface PurchaseDetailsModalProps {
 export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange }: PurchaseDetailsModalProps) {
   const [loading, setLoading] = useState(false)
 
-  if (!purchase) return null
+  const handleStatusChange = async (newStatus: string) => {
+    if (!onStatusChange) return
+    try {
+      setLoading(true)
+      await onStatusChange(newStatus)
+    } catch (error) {
+      console.error('Error al cambiar el estado:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // Lógica robusta para obtener los productos
+  // Lógica para parsear los productos
   let items: any[] = []
-  if (Array.isArray(purchase.items)) {
+  if (Array.isArray(purchase?.items)) {
     items = purchase.items
-  } else if (Array.isArray(purchase.products)) {
+  } else if (Array.isArray(purchase?.products)) {
     items = purchase.products
-  } else if (typeof purchase.products === "string") {
+  } else if (typeof purchase?.products === "string") {
     try {
       items = JSON.parse(purchase.products)
     } catch {
       items = []
     }
   }
+
   const validItems = Array.isArray(items)
     ? items.filter((item: any) => item && typeof item === "object" && "name" in item)
     : []
 
-  console.log("Modal recibe:", purchase);
+  console.log("Modal recibe:", purchase)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -51,13 +62,13 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Detalles de Compra #{purchase.id || 'N/A'}
+            Detalles de Compra #{purchase?.id || 'N/A'}
           </DialogTitle>
           <DialogDescription>
             {(() => {
               try {
-                const timestamp = Number(purchase.created_at) * 1000;
-                const date = new Date(timestamp);
+                const timestamp = Number(purchase?.created_at) * 1000
+                const date = new Date(timestamp)
                 if (isNaN(date.getTime()) || date.getFullYear() < 2020) {
                   return `Realizada el ${new Date().toLocaleDateString('es-ES', {
                     year: 'numeric',
@@ -66,7 +77,7 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false
-                  })}`;
+                  })}`
                 }
                 return `Realizada el ${date.toLocaleDateString('es-ES', {
                   year: 'numeric',
@@ -75,9 +86,9 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
                   hour: '2-digit',
                   minute: '2-digit',
                   hour12: false
-                })}`;
+                })}`
               } catch (error) {
-                return 'Fecha no disponible';
+                return 'Fecha no disponible'
               }
             })()}
           </DialogDescription>
@@ -87,8 +98,8 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
           {/* Estado de la compra */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Estado:</span>
-            <Badge variant={(purchase.transactionState === "Enviado" || purchase.status === "Entregado") ? "default" : "outline"}>
-              {purchase.transactionState || purchase.status || 'Pendiente'}
+            <Badge variant={(purchase?.transactionState === "Enviado" || purchase?.status === "Entregado") ? "default" : "outline"}>
+              {purchase?.transactionState || purchase?.status || 'Pendiente'}
             </Badge>
           </div>
 
@@ -125,7 +136,7 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm">Subtotal:</span>
-                <span>${purchase.subtotal?.toFixed(2) || '0.00'}</span>
+                <span>${purchase?.subtotal?.toFixed(2) || '0.00'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Envío:</span>
@@ -133,24 +144,24 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Taxes:</span>
-                <span>${purchase.taxes?.toFixed(2) || '0.00'}</span>
+                <span>${purchase?.taxes?.toFixed(2) || '0.00'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Propina:</span>
-                <span>${purchase.tip?.toFixed(2) || '0.00'}</span>
+                <span>${purchase?.tip?.toFixed(2) || '0.00'}</span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-bold">
                 <span>Total:</span>
-                <span>${purchase.total?.toFixed(2) || '0.00'}</span>
+                <span>${purchase?.total?.toFixed(2) || '0.00'}</span>
               </div>
               <div className="mt-4 space-y-1">
                 <p className="text-sm font-medium">Método de pago:</p>
                 <p className="text-sm">{
-                  purchase.type === 'CARD' ? 'Tarjeta de Crédito/Débito' :
-                  purchase.type === 'CASH' ? 'Efectivo' :
-                  purchase.type === 'TRANSFER' ? 'Transferencia Bancaria' :
-                  purchase.type || 'No especificado'
+                  purchase?.type === 'CARD' ? 'Tarjeta de Crédito/Débito' :
+                  purchase?.type === 'CASH' ? 'Efectivo' :
+                  purchase?.type === 'TRANSFER' ? 'Transferencia Bancaria' :
+                  purchase?.type || 'No especificado'
                 }</p>
               </div>
             </div>
@@ -166,10 +177,10 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
             </h3>
             <div className="space-y-2">
               <p className="text-sm">
-                <span className="font-medium">Nombre:</span> {purchase.customer?.name || 'No disponible'}
+                <span className="font-medium">Nombre:</span> {purchase?.customer?.name || 'No disponible'}
               </p>
               <p className="text-sm">
-                <span className="font-medium">Email:</span> {purchase.customer?.email || 'No disponible'}
+                <span className="font-medium">Email:</span> {purchase?.customer?.email || 'No disponible'}
               </p>
             </div>
           </div>
@@ -183,7 +194,7 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
               Dirección de Envío
             </h3>
             <div className="space-y-1 text-sm">
-              {purchase.customer?.address ? (
+              {purchase?.customer?.address ? (
                 <>
                   <p>{purchase.customer.address}</p>
                   {purchase.customer.house_apt && (
@@ -212,8 +223,8 @@ export function PurchaseDetailsModal({ purchase, isOpen, onClose, onStatusChange
         <DialogFooter>
           <Button onClick={onClose}>Cerrar</Button>
           <Button 
-          onClick={() => ('Enviado')}
-          disabled={loading}
+            onClick={() => handleStatusChange('Enviado')}
+            disabled={loading}
           >
             {loading ? <RefreshCcw className="animate-spin" /> : 'Marcar como Enviado'}
           </Button>
