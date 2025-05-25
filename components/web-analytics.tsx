@@ -127,12 +127,12 @@ export default function WebAnalytics() {
               <TabsContent value="anual" className="mt-0">
                 <div className="w-full h-[220px] sm:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: "Visitas", visitas: stats?.visits ?? 0 }]}
+                    <BarChart data={[{ name: "Visitas", visits: stats?.visits ?? 0 }]}
                       margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" />
                       <YAxis tickFormatter={formatNumber} />
-                      <Bar dataKey="visitas" fill="#8884d8" />
+                      <Bar dataKey="visits" fill="#8884d8" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
