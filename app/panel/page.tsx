@@ -82,21 +82,23 @@ export default function PanelPage() {
 
       // WISHLIST: 2. Hacer fetch a la API
       fetch('/api/wishlist/numero')
-        .then(response => {
-          console.log('Response from /api/wishlist/numero:', response);
-          return response.json();
+        .then(res => {
+          if (res.status === 401) {
+            setWishlistCount(null);
+            localStorage.removeItem('dashboard_wishlistCount');
+            // Opcional: mostrar un toast o redirigir a login
+            return null;
+          }
+          return res.json();
         })
         .then(data => {
-          console.log('Data from /api/wishlist/numero:', data);
-          if (data.lastWishlistId) {
-            setLastWishlistId(data.lastWishlistId);
-            if (typeof window !== "undefined") {
-              localStorage.setItem('dashboard_lastWishlistId', data.lastWishlistId);
-            }
+          if (data && typeof data.wishlistCount === 'number') {
+            setWishlistCount(data.wishlistCount);
+            localStorage.setItem('dashboard_wishlistCount', data.wishlistCount);
           }
         })
         .catch(error => {
-          console.error('Error al obtener el último ID de la wishlist:', error);
+          console.error('Error al obtener el número de productos favoritos:', error);
         });
 
       // SALDO: 1. Intentar cargar de localStorage
