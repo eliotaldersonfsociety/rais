@@ -3,20 +3,29 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-function generateSessionId() {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+function generateBrowserId() {
+  return 'browser_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+function getBrowserId() {
+  const storageKey = 'browser_id';
+  let browserId = localStorage.getItem(storageKey);
+  
+  if (!browserId) {
+    browserId = generateBrowserId();
+    localStorage.setItem(storageKey, browserId);
+  }
+  
+  return browserId;
 }
 
 export function usePageView() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Get or create sessionId
-    let sessionId = localStorage.getItem('sessionId');
-    if (!sessionId) {
-      sessionId = generateSessionId();
-      localStorage.setItem('sessionId', sessionId);
-    }
+    const browserId = getBrowserId();
+    const tabId = Math.random().toString(36).substring(2);
+    const sessionId = `${browserId}_${tabId}`;
 
     // Track page visit
     fetch("/api/visitas", {
@@ -26,21 +35,39 @@ export function usePageView() {
     });
 
     // Track active user
-    fetch("/api/active-users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, pathname }),
-    });
-
-    // Set up interval to keep session alive
-    const interval = setInterval(() => {
+    const trackActiveUser = () => {
       fetch("/api/active-users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, pathname }),
       });
-    }, 30000); // Update every 30 seconds
+    };
 
-    return () => clearInterval(interval);
+    // Initial tracking
+    trackActiveUser();
+
+    // Set up interval to keep session alive
+    const interval = setInterval(trackActiveUser, 30000);
+
+    // Track on visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        trackActiveUser();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Notify server when tab is closed
+      fetch("/api/active-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, pathname, action: 'remove' }),
+      });
+    };
   }, [pathname]);
 }
