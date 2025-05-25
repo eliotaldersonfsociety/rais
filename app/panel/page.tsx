@@ -298,6 +298,7 @@ export default function PanelPage() {
           </div>
         </div>
       </div>
+      </div>
     </DashboardLayouts>
   );
 }
