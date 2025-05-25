@@ -49,8 +49,12 @@ export default function PanelPage() {
     if (user && user.publicMetadata?.isAdmin) {
       // Obtener compras
       fetch('/api/pagos/numerodepagos')
-        .then(response => response.json())
+        .then(response => {
+          console.log('Response from /api/pagos/numerodepagos:', response);
+          return response.json();
+        })
         .then(data => {
+          console.log('Data from /api/pagos/numerodepagos:', data);
           if (data.purchases) {
             const purchasesFixed = data.purchases.map((purchase: any) => ({
               ...purchase,
@@ -63,17 +67,26 @@ export default function PanelPage() {
             }
           }
         })
-        .catch(error => console.error('Error al obtener las compras:', error));
+        .catch(error => {
+          console.error('Error al obtener las compras:', error);
+        });
 
-      // Wishlist
+      // WISHLIST: 1. Cargar de localStorage
       if (typeof window !== "undefined") {
         const localWishlistId = localStorage.getItem('dashboard_lastWishlistId');
-        if (localWishlistId) setLastWishlistId(Number(localWishlistId));
+        if (localWishlistId) {
+          setLastWishlistId(Number(localWishlistId));
+        }
       }
 
+      // WISHLIST: 2. Fetch API
       fetch('/api/wishlist/numero')
-        .then(response => response.json())
+        .then(response => {
+          console.log('Response from /api/wishlist/numero:', response);
+          return response.json();
+        })
         .then(data => {
+          console.log('Data from /api/wishlist/numero:', data);
           if (data.lastWishlistId) {
             setLastWishlistId(data.lastWishlistId);
             if (typeof window !== "undefined") {
@@ -81,9 +94,11 @@ export default function PanelPage() {
             }
           }
         })
-        .catch(error => console.error('Error al obtener wishlist:', error));
+        .catch(error => {
+          console.error('Error al obtener el último ID de la wishlist:', error);
+        });
 
-      // Saldo
+      // SALDO: 1. Cargar de localStorage
       if (typeof window !== "undefined") {
         const localSaldo = localStorage.getItem('dashboard_saldo');
         if (localSaldo) {
@@ -92,13 +107,20 @@ export default function PanelPage() {
         }
       }
 
+      // SALDO: 2. Fetch API
       fetch('/api/balance', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ userId: user.id }),
       })
-        .then(response => response.json())
+        .then(response => {
+          console.log('Response from /api/balance:', response);
+          return response.json();
+        })
         .then(data => {
+          console.log('Data from /api/balance:', data);
           if (data.saldo !== undefined) {
             setSaldo(data.saldo);
             if (typeof window !== "undefined") {
@@ -108,13 +130,16 @@ export default function PanelPage() {
           setLoading(false);
         })
         .catch(error => {
-          console.error('Error al obtener saldo:', error);
+          console.error('Error al obtener el saldo:', error);
           setLoading(false);
         });
 
+      // Cargar comprasPendientes
       if (typeof window !== "undefined") {
         const compras = localStorage.getItem('compras_pendientes');
-        if (compras) setComprasPendientes(JSON.parse(compras));
+        if (compras) {
+          setComprasPendientes(JSON.parse(compras));
+        }
       }
     }
   }, [user, isLoaded]);
@@ -123,9 +148,8 @@ export default function PanelPage() {
   const lastname = user?.lastName || '';
   const email = user?.primaryEmailAddress?.emailAddress || '';
 
-  const lastPurchaseId = purchases[0]?.id || 'N/A';
-  const lastPurchaseDate = purchases[0]?.created_at ? 
-    new Date(purchases[0].created_at).toLocaleDateString() : 'N/A';
+  const lastPurchaseId = purchases.length > 0 ? purchases[0].id : 'N/A';
+  const lastPurchaseDate = purchases.length > 0 ? new Date(purchases[0].created_at).toLocaleDateString() : 'N/A';
 
   // Paginación
   const indexOfLastPurchase = currentPage * purchasesPerPage;
@@ -134,69 +158,95 @@ export default function PanelPage() {
   const totalPages = Math.ceil(purchases.length / purchasesPerPage);
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   return (
     <DashboardLayouts>
       <div className="p-8 space-y-8">
-        <h1 className="text-3xl font-bold">Panel de Administración</h1>
-        
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Panel Administrativo</h1>
+          <div className="text-sm text-gray-500">
+            {name} {lastname} - {email}
+          </div>
+        </div>
+
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h3 className="text-lg font-semibold mb-2">Saldo Actual</h3>
+          {/* Tarjeta Saldo */}
+          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Saldo Actual</h3>
             {loading ? (
-              <Skeleton width={100} height={24} />
+              <Skeleton width={120} height={32} />
             ) : (
-              <p className="text-2xl font-bold text-emerald-600">
+              <div className="text-3xl font-bold text-emerald-600">
                 ${saldo?.toFixed(2)}
-              </p>
+              </div>
             )}
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h3 className="text-lg font-semibold mb-2">Última Compra</h3>
-            <p className="text-gray-600">ID: {lastPurchaseId}</p>
-            <p className="text-gray-600">Fecha: {lastPurchaseDate}</p>
+          {/* Tarjeta Última Compra */}
+          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Última Compra</h3>
+            <div className="space-y-1">
+              <p className="text-gray-600">ID: {lastPurchaseId}</p>
+              <p className="text-gray-600">Fecha: {lastPurchaseDate}</p>
+            </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <h3 className="text-lg font-semibold mb-2">Wishlists Activas</h3>
+          {/* Tarjeta Wishlists */}
+          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Wishlists Activas</h3>
             {lastWishlistId ? (
-              <p className="text-2xl font-bold text-blue-600">{lastWishlistId}</p>
+              <div className="text-3xl font-bold text-blue-600">{lastWishlistId}</div>
             ) : (
-              <Skeleton width={50} />
+              <Skeleton width={80} height={32} />
             )}
           </div>
         </div>
 
         {/* Tabla de Compras */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-bold mb-4">Historial de Compras</h2>
-          
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Historial de Compras</h2>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-500">
+                Mostrando {indexOfFirstPurchase + 1}-{Math.min(indexOfLastPurchase, purchases.length)} de {purchases.length}
+              </span>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-3">ID</th>
-                  <th className="pb-3">Descripción</th>
-                  <th className="pb-3">Total</th>
-                  <th className="pb-3">Fecha</th>
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">ID</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Descripción</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Total</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Fecha</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {currentPurchases.map((purchase) => (
-                  <tr key={purchase.id} className="border-b">
-                    <td className="py-4">{purchase.id}</td>
-                    <td className="py-4">{purchase.description}</td>
-                    <td className="py-4">${purchase.total.toFixed(2)}</td>
-                    <td className="py-4">
-                      {new Date(purchase.created_at).toLocaleDateString()}
+                  <tr key={purchase.id}>
+                    <td className="px-6 py-4 text-sm text-gray-900">{purchase.id}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{purchase.description}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">${purchase.total.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(purchase.created_at).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
                     </td>
                   </tr>
                 ))}
@@ -204,26 +254,38 @@ export default function PanelPage() {
             </table>
           </div>
 
-          {/* Controles de Paginación */}
-          <div className="flex justify-end items-center mt-6 gap-4">
+          {/* Paginación */}
+          <div className="mt-6 flex items-center justify-between">
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 border rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft className="inline-block h-4 w-4" /> Anterior
             </button>
             
-            <span className="text-sm text-gray-600">
-              Página {currentPage} de {totalPages}
-            </span>
-            
+            <div className="hidden md:flex space-x-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    currentPage === page 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="p-2 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 border rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronRight size={20} />
+              Siguiente <ChevronRight className="inline-block h-4 w-4" />
             </button>
           </div>
         </div>
