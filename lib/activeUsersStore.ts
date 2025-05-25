@@ -1,16 +1,29 @@
 // Este objeto solo vive en RAM del servidor
-const activeUsers: Record<string, number> = {}; // { sessionId: timestamp }
+const activeUsers: Record<string, { timestamp: number; pathname: string }> = {};
 
-export function addActiveUser(sessionId: string) {
-  activeUsers[sessionId] = Date.now();
+export function addActiveUser(sessionId: string, pathname: string = '/') {
+  activeUsers[sessionId] = { timestamp: Date.now(), pathname };
 }
 
 export function removeActiveUser(sessionId: string) {
   delete activeUsers[sessionId];
 }
 
-export function getActiveUserCount(timeoutMs = 60000) {
-  // Considera activo si ha hecho ping en el último minuto
+export function cleanExpiredSessions(timeoutMs = 60000) {
   const now = Date.now();
-  return Object.values(activeUsers).filter(ts => now - ts < timeoutMs).length;
+  Object.entries(activeUsers).forEach(([sessionId, data]) => {
+    if (now - data.timestamp > timeoutMs) {
+      delete activeUsers[sessionId];
+    }
+  });
+}
+
+export function getActiveUserCount(timeoutMs = 60000) {
+  cleanExpiredSessions(timeoutMs);
+  return Object.values(activeUsers).length;
+}
+
+export function getActivePages() {
+  const uniquePages = new Set(Object.values(activeUsers).map(data => data.pathname));
+  return uniquePages.size;
 }
