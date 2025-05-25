@@ -2,61 +2,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import db from '@/lib/db';
-import { wishlist, productWishlist } from '@/lib/wishlist/schema';
-import { eq, and, count } from 'drizzle-orm';
 import { wishlist } from '@/lib/wishlist/schema';
+import { eq } from 'drizzle-orm';
+
+function log(message: string, data?: any) {
+  console.log(`[Wishlist API] ${new Date().toISOString()} - ${message}`, data !== undefined ? data : '');
+}
 
 export async function GET(req: NextRequest) {
+  log('--- GET Request Received ---');
+
+  // Autenticación con Clerk
+  const { userId } = await auth();
+  if (!userId) {
+    log('Unauthorized access detected. No userId.');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  log('User ID:', userId);
+
   try {
-    const { userId } = await auth();
-    
-    // Verificar si el usuario es admin
-    const user = await db.users
+    log('Intentando contar el número de filas de wishlist para el usuario...');
+    const result = await db.wishlist
       .select()
-      .from(users)
-      .where(eq(users.clerkId, userId!))
-      .get();
-
-    if (!user?.isAdmin) {
-      return NextResponse.json(
-        { error: 'Acceso no autorizado' },
-        { status: 403 }
-      );
-    }
-
-    // Obtener todas las wishlists con sus productos
-    const wishlists = await db.wishlist
-      .select({
-        id: wishlist.id,
-        name: wishlist.name,
-        userId: wishlist.userId,
-        createdAt: wishlist.createdAt,
-        productCount: count(productWishlist.productId)
-      })
       .from(wishlist)
-      .leftJoin(
-        productWishlist,
-        eq(wishlist.id, productWishlist.wishlistId)
-      )
-      .groupBy(wishlist.id)
-      .all();
+      .where(eq(wishlist.userId, userId));
 
-    // Obtener último ID
-    const lastWishlistId = wishlists.length > 0 
-      ? Math.max(...wishlists.map(w => w.id))
-      : 0;
+    const wishlistCount = result.length;
+    log('Wishlist count:', wishlistCount);
+    log('--- GET Request Success ---');
 
-    return NextResponse.json({
-      wishlists,
-      lastWishlistId,
-      total: wishlists.length
-    });
-
+    return NextResponse.json({ wishlistCount });
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener wishlists' },
-      { status: 500 }
-    );
+    log('!!! Drizzle DB Error counting wishlist:', error);
+    log('--- GET Request Failed (Drizzle DB Error) ---');
+    return NextResponse.json({ error: 'Failed to count wishlist' }, { status: 500 });
   }
 }
