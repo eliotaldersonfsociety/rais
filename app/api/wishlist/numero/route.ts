@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import db from '@/lib/db';
 import { wishlist, productWishlist } from '@/lib/wishlist/schema';
 import { eq, and, count } from 'drizzle-orm';
-import { users } from '@/lib/auth/schema';
+import { users } from '@/lib/wishlist/schema';
 
 export async function GET(req: NextRequest) {
   try {
