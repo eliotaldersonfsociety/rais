@@ -13,11 +13,9 @@ const COLORS = ["#8884d8", "#83a6ed", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57"
 export default function WebAnalytics() {
   usePageView();
   const [stats, setStats] = useState<{
-    visits: number;
-    pageViews: number;
-    locations: {[key: string]: number};
-    browsers: {[key: string]: number};
-    devices: {[key: string]: number};
+    total: number;
+    rutasCount: {[key: string]: number};
+    countryCount: {[key: string]: number};
   } | null>(null);
   const [timeRange, setTimeRange] = useState("anual")
 
@@ -93,13 +91,13 @@ export default function WebAnalytics() {
   if (!stats) return <div className="text-center py-10">Cargando estadísticas...</div>
 
   // Prepara los datos para el gráfico de rutas más visitadas
-  const pageData = Object.entries(stats.locations || {}).map(([name, visits]) => ({
+  const pageData = Object.entries(stats.rutasCount || {}).map(([name, visits]) => ({
     name,
     visits: Number(visits) || 0,
   }));
 
   // Prepara los datos para la gráfica de países
-  const countryData = Object.entries(stats.devices || {}).map(([name, visits]) => ({
+  const countryData = Object.entries(stats.countryCount || {}).map(([name, visits]) => ({
     name,
     visits: Number(visits) || 0,
   }));
@@ -107,27 +105,23 @@ export default function WebAnalytics() {
   return (
     <div className="grid gap-6">
       {/* Panel de visitantes en tiempo real */}
-      <RealTimeVisitors activeUsers={activeUsers} pageViews={stats.visits} />
+      <RealTimeVisitors activeUsers={activeUsers} pageViews={stats.total} />
       <Tabs defaultValue="anual" className="w-full" onValueChange={setTimeRange}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
           <h2 className="text-2xl font-semibold">Estadísticas de Tráfico</h2>
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="anual">Anual</TabsTrigger>
-            {/* Puedes agregar más rangos si tienes datos */}
-          </TabsList>
         </div>
         <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
           {/* Gráfico 1: Total de Visitas */}
           <Card className="md:col-span-3">
             <CardHeader>
               <CardTitle>Total de Visitas</CardTitle>
-              <CardDescription>{formatNumber(stats?.visits ?? 0)} visitas en total</CardDescription>
+              <CardDescription>{formatNumber(stats?.total ?? 0)} visitas en total</CardDescription>
             </CardHeader>
             <CardContent>
               <TabsContent value="anual" className="mt-0">
                 <div className="w-full h-[220px] sm:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: "Visitas", visits: stats?.visits ?? 0 }]}
+                    <BarChart data={[{ name: "Visitas", visits: stats?.total ?? 0 }]}
                       margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" />
