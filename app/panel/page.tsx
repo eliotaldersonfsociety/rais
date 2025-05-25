@@ -86,12 +86,10 @@ export default function PanelPage() {
           return response.json();
         })
         .then(data => {
+          setLastWishlistId(data.lastWishlistId);
           console.log('Data from /api/wishlist/numero:', data);
-          if (data.lastWishlistId) {
-            setLastWishlistId(data.lastWishlistId);
-            if (typeof window !== "undefined") {
-              localStorage.setItem('dashboard_lastWishlistId', data.lastWishlistId);
-            }
+          if (data.wishlistCount) {
+            localStorage.setItem('wishlist_count', data.wishlistCount);
           }
         })
         .catch(error => {
@@ -205,14 +203,24 @@ export default function PanelPage() {
 
           {/* Tarjeta Wishlists */}
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Wishlists Activas</h3>
-            {lastWishlistId ? (
-              <div className="text-3xl font-bold text-blue-600">{lastWishlistId}</div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              Wishlists Activas
+            </h3>
+            
+            {/* Mostrar conteo en vez de último ID */}
+            {data?.wishlistCount !== undefined ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-blue-600">
+                  {data.wishlistCount}
+                </span>
+                <span className="text-sm text-gray-500">
+                  (Último ID: {data.lastWishlistId || 'N/A'})
+                </span>
+              </div>
             ) : (
               <Skeleton width={80} height={32} />
             )}
           </div>
-        </div>
 
         {/* Tabla de Compras */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
