@@ -39,6 +39,8 @@ export default function PanelPage() {
   const [saldo, setSaldo] = useState<number | null>(null);
   const [comprasPendientes, setComprasPendientes] = useState<any[]>([]);
   const purchasesPerPage = 5;
+  const [wishlistCount, setWishlistCount] = useState<number | null>(null);
+
 
   useEffect(() => {
     if (isLoaded && user && !user.publicMetadata?.isAdmin) {
