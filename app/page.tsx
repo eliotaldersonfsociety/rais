@@ -61,8 +61,7 @@ export default function PaginaPage() {
 
         // Si no hay caché o expiró, obtener nuevos datos
         console.log('🔄 Obteniendo productos desde la API...');
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        const res = await fetch(`${baseUrl}/api/products`);
+        const res = await fetch('/api/products');
         
         if (!res.ok) {
           let errorText = await res.text().catch(() => 'No se pudo leer el cuerpo del error');
@@ -105,10 +104,9 @@ export default function PaginaPage() {
     
     try {
       console.log('🔄 Actualizando productos...');
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      const res = await fetch(`${baseUrl}/api/products`);
+      const res = await fetch('/api/products');
 
-    if (!res.ok) {
+      if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         console.error('❌ Error al actualizar:', {
           status: res.status,
