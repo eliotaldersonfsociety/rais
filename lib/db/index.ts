@@ -55,8 +55,8 @@ export const db = {
   wishlist: transactionsDb,
   users: usersDb,
   transactions: transactionsDb,
-  payu: payuDb,
-  payus: transactionsDb,
+  payus: payuDb,
+  payu: transactionsDb,
   visitas: visitasDb,
 } as const;
 
