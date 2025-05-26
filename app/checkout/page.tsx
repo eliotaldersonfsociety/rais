@@ -279,8 +279,8 @@ function CheckoutContent() {
         const referenceCode = `Order_${Date.now()}`;
         const orderDataForApi = {
             amount: Number(grandTotal.toFixed(0)),
-            tax: tax.toFixed(2),
-            taxReturnBase: totalPrice.toFixed(2),
+            tax: Number(tax.toFixed(2)),
+            taxReturnBase: Number(totalPrice.toFixed(2)),
             currency: currency,
             referenceCode,
             description: `Compra: ${cartItems.map((i: typeof cartItems[0]) => `${i.quantity}x ${i.name}`).join(", ")}`,
@@ -303,12 +303,12 @@ function CheckoutContent() {
                 color: item.color,
                 size: item.size,
                 sizeRange: item.sizeRange,
-                taxes: tax.toFixed(2),
-                tipAmount: tip.toFixed(2),
-                subtotal: totalPrice.toFixed(2),
-                total: grandTotal.toFixed(2),
+                taxes: Number(tax.toFixed(2)),
+                tipAmount: Number(tip.toFixed(2)),
+                subtotal: Number(totalPrice.toFixed(2)),
+                total: Number(grandTotal.toFixed(2)),
             })),
-            tipAmount: tip.toFixed(2),
+            tipAmount: Number(tip.toFixed(2)),
         };
 
         try {
