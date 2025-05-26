@@ -278,7 +278,7 @@ function CheckoutContent() {
         // 1. Preparar los datos de la orden
         const referenceCode = `Order_${Date.now()}`;
         const orderDataForApi = {
-            amount: grandTotal.toFixed(0),
+            amount: Number(grandTotal.toFixed(0)),
             tax: tax.toFixed(2),
             taxReturnBase: totalPrice.toFixed(2),
             currency: currency,
