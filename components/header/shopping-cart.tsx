@@ -9,6 +9,7 @@ import Image from "next/image";
 import { ShoppingCartIcon as CartIcon, Plus, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@clerk/nextjs";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose,
 } from "@/components/ui/sheet";
@@ -17,6 +18,7 @@ export default function ShoppingCart() {
   const cartItems = useCartStore(state => state.cartItems);
   const addToCart = useCartStore(state => state.addToCart);
   const removeFromCart = useCartStore(state => state.removeFromCart);
+  const { isSignedIn } = useAuth();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -35,6 +37,10 @@ export default function ShoppingCart() {
   }, [cartItems, router, pathname, isCheckoutLoading, isMounted]);
 
   const handleCheckoutClick = () => {
+    if (!isSignedIn) {
+      router.push("/sign-in?redirect_url=/checkout");
+      return;
+    }
     router.push("/checkout");
   };
 
@@ -107,12 +113,6 @@ export default function ShoppingCart() {
 
         {cartItems.length > 0 && (
           <SheetFooter className="flex-col gap-2 mt-4 sm:flex-row sm:justify-between">
-            {/* Puedes descomentar esto si quieres mostrar el total */}
-            {/* <div className="w-full flex justify-between font-medium text-base border-t border-gray-200 pt-4">
-              <span>Total:</span>
-              <span>${totalPrice.toFixed(2)}</span>
-            </div> */}
-
             <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:justify-end">
               <SheetClose asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
