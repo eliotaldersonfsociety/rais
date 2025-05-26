@@ -55,7 +55,8 @@ export const db = {
   wishlist: transactionsDb,
   users: usersDb,
   transactions: transactionsDb,
-  payu: transactionsDb,
+  payu: payuDb,
+  payus: transactionsDb,
   visitas: visitasDb,
 } as const;
 
@@ -71,4 +72,4 @@ export async function POST(req: NextRequest) {
   }
 
   // ... resto del código ...
-} 
+}
