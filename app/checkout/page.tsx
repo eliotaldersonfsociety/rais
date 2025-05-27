@@ -90,6 +90,26 @@ function CheckoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
+    const [paymentMethod, setPaymentMethod] = useState<"saldo" | "payu">("saldo");
+    const [tipAmount, setTipAmount] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
+        email: '',
+        marketingEmail: true,
+        country: 'CO',
+        firstname: '',
+        lastname: '',
+        address: '',
+        apartment: '',
+        city: '',
+        province: '',
+        postal: '',
+        phone: '',
+        saveInfo: false,
+        marketingSms: false,
+    });
+
     // LOGS DE DEPURACIÓN EN EL RENDER
     console.log('RENDER: isLoaded:', isLoaded);
     console.log('RENDER: isSignedIn:', isSignedIn);
@@ -115,7 +135,7 @@ function CheckoutContent() {
                 lastname: user.lastName || prev.lastname
             }));
         }
-    }, [isSignedIn, user, fetchUserSaldo]);
+    }, [isSignedIn, user]);
 
     useEffect(() => {
         if (isSignedIn && user?.id) {
@@ -123,36 +143,16 @@ function CheckoutContent() {
         }
     }, [isSignedIn, user, fetchUserSaldo]);
 
-    if (!isLoaded) {
-        console.log('NO está cargado Clerk todavía, mostrando loader');
-        return <div>Cargando...</div>;
-    }
-
-    const [paymentMethod, setPaymentMethod] = useState<"saldo" | "payu">("saldo");
-    const [tipAmount, setTipAmount] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
-        email: '',
-        marketingEmail: true,
-        country: 'CO',
-        firstname: '',
-        lastname: '',
-        address: '',
-        apartment: '',
-        city: '',
-        province: '',
-        postal: '',
-        phone: '',
-        saveInfo: false,
-        marketingSms: false,
-    });
-    const [open, setOpen] = useState(false);
-
     // Calculations
     const totalPrice = cartItems.reduce((sum: number, item: typeof cartItems[0]) => sum + item.price * item.quantity, 0);
     const tax = totalPrice * 0.19;
     const tip = tipAmount && tipAmount !== "none" ? totalPrice * (parseInt(tipAmount) / 100) : 0;
     const grandTotal = totalPrice + tax + tip;
+
+    if (!isLoaded) {
+        console.log('NO está cargado Clerk todavía, mostrando loader');
+        return <div>Cargando...</div>;
+    }
 
     const countryToCurrency = {
         USD: "USD",
