@@ -125,14 +125,17 @@ function CheckoutContent() {
             return;
         }
 
-        // Si el usuario no está autenticado después de cargar, redirigir
-        if (isLoaded && !isSignedIn) {
+        // Esperar a que se cargue el estado de autenticación
+        if (!isLoaded) return;
+
+        // Si el usuario no está autenticado, redirigir
+        if (!isSignedIn) {
             router.replace("/sign-in?redirect_url=/checkout");
             return;
         }
 
         // Si el usuario está autenticado, actualizar la información
-        if (isSignedIn && user) {
+        if (user) {
             setDeliveryInfo(prev => ({
                 ...prev,
                 email: user.primaryEmailAddress?.emailAddress || prev.email,
