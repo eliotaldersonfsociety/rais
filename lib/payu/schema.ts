@@ -36,4 +36,21 @@ export const orderItems = sqliteTable('order_items', {
     price: real('price').notNull(), // Precio del producto
     quantity: integer('quantity').notNull(), // Cantidad del producto
   });
+
+
+export const users = sqliteTable("usuarios", {
+      id: integer("id").primaryKey({ autoIncrement: true }),
+      clerk_id: text("clerk_id").unique(), 
+      email: text("email").notNull().unique(),
+      address: text("address"),
+      house_apt: text("house_apt"),
+      city: text("city"),
+      state: text("state"),
+      country: text("country"),
+      postal_code: text("postal_code"),
+      saldo: text("saldo").default('0.00'),
+      phone: text("phone"),
+      first_name: text("first_name"),
+      last_name: text("last_name"),
+    });
   
