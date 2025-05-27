@@ -37,13 +37,20 @@ export default function ShoppingCart() {
   }, [cartItems, router, pathname, isCheckoutLoading, isMounted]);
 
   const handleCheckoutClick = async () => {
-    if (!isSignedIn) {
-      router.push("/sign-in?redirect_url=/checkout");
-      return;
-    }
     setIsCheckoutLoading(true);
     try {
-      await router.push("/checkout");
+      if (!isSignedIn) {
+        await router.push("/sign-in?redirect_url=/checkout");
+        return;
+      }
+      
+      // Asegurarse de que el carrito no esté vacío
+      if (cartItems.length === 0) {
+        return;
+      }
+
+      // Usar replace en lugar de push para evitar problemas con el historial
+      await router.replace("/checkout");
     } catch (error) {
       console.error("Error al redirigir al checkout:", error);
     } finally {
