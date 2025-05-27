@@ -1,8 +1,9 @@
 // app/api/process-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db/index'; // Drizzle client
-import { orders, orderItems } from '@/lib/payu/schema'; // Drizzle schema
+import { orders, orderItems, users } from '@/lib/payu/schema'; // Asegúrate de importar la tabla users
 import { getAuth } from '@clerk/nextjs/server';
+import { eq, isNull } from 'drizzle-orm';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,18 +11,15 @@ export async function POST(req: NextRequest) {
     const { userId } = getAuth(req);
 
     // 2. Parsear el cuerpo de la solicitud
-    const { url, items } = await req.json();
-    if (!url || !items) {
-      console.log("Faltan url o items en el body:", { url, items });
-      return NextResponse.json({ error: 'URL y productos son necesarios' }, { status: 400 });
+    const { url, items, deliveryInfo } = await req.json();
+    if (!url || !items || !deliveryInfo) {
+      return NextResponse.json({ error: 'Faltan datos necesarios' }, { status: 400 });
     }
 
     // 3. Parsear parámetros de la URL
     const urlObj = new URL(url);
     const params = Object.fromEntries(urlObj.searchParams.entries());
-    console.log("Parámetros extraídos de la URL:", params);
 
-    // 4. Desestructuración de parámetros (sin processingDate)
     const {
       referenceCode,
       TX_VALUE,
@@ -31,19 +29,13 @@ export async function POST(req: NextRequest) {
       transactionState
     } = params;
 
-    // Log de los valores a insertar
-    console.log("Valores a insertar en la orden:", {
-      referenceCode, TX_VALUE, currency, buyerEmail, authorizationCode, transactionState
-    });
-
     if (!authorizationCode || !transactionState) {
       return NextResponse.json({ error: 'Faltan parámetros obligatorios' }, { status: 400 });
     }
 
-    // Genera el timestamp en el backend
     const processingDate = Date.now();
 
-    // 5. Guardar la orden en la base de datos
+    // 4. Guardar la orden en la base de datos
     const result = await db.transactions.insert(orders).values({
       referenceCode,
       clerk_id: userId || null,
@@ -55,14 +47,10 @@ export async function POST(req: NextRequest) {
       processingDate,
     });
 
-    console.log("Resultado del insert:", result);
-
     const orderId = Number(result.lastInsertRowid);
-    console.log("ID de la orden insertada:", orderId);
 
-    // 6. Guardar los productos asociados a la orden
+    // 5. Guardar los productos asociados a la orden
     const orderItemPromises = items.map((item: any) => {
-      console.log("Insertando item:", item);
       return db.transactions.insert(orderItems).values({
         orderId,
         productId: String(item.id),
@@ -71,10 +59,33 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
       });
     });
-
     await Promise.all(orderItemPromises);
 
-    // 7. Responder con éxito
+    // 6. Verificar y actualizar datos de envío del usuario si están vacíos
+    if (userId) {
+      const user = await db.query.users.findFirst({
+        where: eq(users.clerk_id, userId),
+      });
+
+      if (user) {
+        const updates: Partial<typeof users.$inferInsert> = {};
+
+        if (!user.name && deliveryInfo.firstname) updates.name = deliveryInfo.firstname;
+        if (!user.lastname && deliveryInfo.lastname) updates.lastname = deliveryInfo.lastname;
+        if (!user.email && deliveryInfo.email) updates.email = deliveryInfo.email;
+        if (!user.phone && deliveryInfo.phone) updates.phone = deliveryInfo.phone;
+        if (!user.direction && deliveryInfo.address) updates.direction = deliveryInfo.address;
+        if (!user.postalcode && deliveryInfo.postal) updates.postalcode = deliveryInfo.postal;
+
+        if (Object.keys(updates).length > 0) {
+          await db
+            .update(users)
+            .set(updates)
+            .where(eq(users.clerk_id, userId));
+        }
+      }
+    }
+
     return NextResponse.json({ message: 'Pago procesado correctamente' });
   } catch (error: any) {
     console.error('Error procesando el pago:', error);
