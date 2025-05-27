@@ -112,11 +112,26 @@ function CheckoutContent() {
 
     // Consolidar todos los useEffect al inicio
     useEffect(() => {
-        if (isLoaded && !isSignedIn) {
-            router.replace("/pagina");
+        // Verificar si hay un pago en proceso de PayU
+        const lastPaymentMethod = localStorage.getItem("lastPaymentMethod");
+        const orderDetails = localStorage.getItem("orderDetails");
+
+        // Si el usuario viene de PayU, limpiar el estado
+        if (lastPaymentMethod === "payu" && orderDetails) {
+            localStorage.removeItem("lastPaymentMethod");
+            localStorage.removeItem("orderDetails");
+            clearCart();
+            router.replace("/thankyou");
             return;
         }
 
+        // Si el usuario no está autenticado después de cargar, redirigir
+        if (isLoaded && !isSignedIn) {
+            router.replace("/sign-in?redirect_url=/checkout");
+            return;
+        }
+
+        // Si el usuario está autenticado, actualizar la información
         if (isSignedIn && user) {
             setDeliveryInfo(prev => ({
                 ...prev,
@@ -124,12 +139,13 @@ function CheckoutContent() {
                 firstname: user.firstName || prev.firstname,
                 lastname: user.lastName || prev.lastname
             }));
+            
+            // Actualizar saldo solo si tenemos ID de usuario
+            if (user.id) {
+                fetchUserSaldo(user.id, isSignedIn);
+            }
         }
-
-        if (isSignedIn && user?.id) {
-            fetchUserSaldo(user.id, isSignedIn);
-        }
-    }, [isLoaded, isSignedIn, user, router, fetchUserSaldo]);
+    }, [isLoaded, isSignedIn, user, router, fetchUserSaldo, clearCart]);
 
     // Calculations
     const totalPrice = cartItems.reduce((sum: number, item: typeof cartItems[0]) => sum + item.price * item.quantity, 0);
@@ -157,27 +173,6 @@ function CheckoutContent() {
         : deliveryInfo.country;
 
     const currency = countryToCurrency[selectedCountry as keyof typeof countryToCurrency] || "COP";
-
-    // Effects
-    useEffect(() => {
-        console.log('USEEFFECT: isSignedIn:', isSignedIn);
-        console.log('USEEFFECT: user:', user);
-        if (isSignedIn && user) {
-            setDeliveryInfo(prev => ({
-                ...prev,
-                email: user.primaryEmailAddress?.emailAddress || prev.email,
-                firstname: user.firstName || prev.firstname,
-                lastname: user.lastName || prev.lastname
-                // El resto de los campos los llena el usuario manualmente
-            }));
-        }
-    }, [isSignedIn, user, fetchUserSaldo]);
-
-    useEffect(() => {
-        if (isSignedIn && user?.id) {
-            fetchUserSaldo(user.id, isSignedIn);
-        }
-    }, [isSignedIn, user, fetchUserSaldo]);
 
     // Handlers
     const handleDeliveryInfoChange = (field: keyof DeliveryInfo, value: string | boolean) => {
@@ -271,59 +266,58 @@ function CheckoutContent() {
     const handlePayUPayment = async () => {
         setLoading(true);
 
-        if (envioIncompleto(deliveryInfo)) {
-            toast.warn("Por favor, completa todos los datos de envío antes de continuar.");
-            setLoading(false);
-            return;
-        }
-
-        // 1. Preparar los datos de la orden
-        const referenceCode = `Order_${Date.now()}`;
-        const orderDataForApi = {
-            amount: Number(grandTotal.toFixed(0)),
-            tax: Number(tax.toFixed(2)),
-            taxReturnBase: Number(totalPrice.toFixed(2)),
-            currency: currency,
-            referenceCode,
-            description: `Compra: ${cartItems.map((i: typeof cartItems[0]) => `${i.quantity}x ${i.name}`).join(", ")}`,
-            buyerEmail: deliveryInfo.email!,
-            buyerFullName: `${deliveryInfo.firstname} ${deliveryInfo.lastname}`.trim(),
-            telephone: deliveryInfo.phone!,
-            shippingAddress: deliveryInfo.address!,
-            shippingCity: deliveryInfo.city!,
-            shippingCountry: "CO",
-            shippingState: deliveryInfo.province!,
-            postalCode: deliveryInfo.postal!,
-            responseUrl: `${window.location.origin}/thankyou`,
-            confirmationUrl: `https://08b1-190-250-217-188.ngrok-free.app/api/update-payment-status`,
-            cartItems: cartItems.map((item: typeof cartItems[0]) => ({
-                id: Number(item.id),
-                name: item.name,
-                quantity: Number(item.quantity),
-                price: Number(item.price),
-                image: Array.isArray(item.image) ? item.image[0] : item.image,
-                color: item.color,
-                size: item.size,
-                sizeRange: item.sizeRange,
-                taxes: Number(tax.toFixed(2)),
-                tipAmount: Number(tip.toFixed(2)),
-                subtotal: Number(totalPrice.toFixed(2)),
-                total: Number(grandTotal.toFixed(2)),
-            })),
-            tipAmount: Number(tip.toFixed(2)),
-        };
-
         try {
-            // 2. Registrar la orden en tu base de datos
-            console.log("URL enviada al backend:", `http://localhost:3000?referenceCode=${referenceCode}&TX_VALUE=${grandTotal}&currency=${currency}&buyerEmail=${deliveryInfo.email}&authorizationCode=pendiente&transactionState=pendiente&processingDate=${Date.now()}`);
+            if (envioIncompleto(deliveryInfo)) {
+                toast.warn("Por favor, completa todos los datos de envío antes de continuar.");
+                return;
+            }
+
+            // 1. Preparar los datos de la orden
+            const referenceCode = `Order_${Date.now()}`;
+            const orderDataForApi = {
+                amount: Number(grandTotal.toFixed(0)),
+                tax: Number(tax.toFixed(2)),
+                taxReturnBase: Number(totalPrice.toFixed(2)),
+                currency: currency,
+                referenceCode,
+                description: `Compra: ${cartItems.map((i: typeof cartItems[0]) => `${i.quantity}x ${i.name}`).join(", ")}`,
+                buyerEmail: deliveryInfo.email!,
+                buyerFullName: `${deliveryInfo.firstname} ${deliveryInfo.lastname}`.trim(),
+                telephone: deliveryInfo.phone!,
+                shippingAddress: deliveryInfo.address!,
+                shippingCity: deliveryInfo.city!,
+                shippingCountry: "CO",
+                shippingState: deliveryInfo.province!,
+                postalCode: deliveryInfo.postal!,
+                responseUrl: `${window.location.origin}/thankyou`,
+                confirmationUrl: `${window.location.origin}/api/update-payment-status`,
+                cartItems: cartItems.map((item: typeof cartItems[0]) => ({
+                    id: Number(item.id),
+                    name: item.name,
+                    quantity: Number(item.quantity),
+                    price: Number(item.price),
+                    image: Array.isArray(item.image) ? item.image[0] : item.image,
+                    color: item.color,
+                    size: item.size,
+                    sizeRange: item.sizeRange,
+                    taxes: Number(tax.toFixed(2)),
+                    tipAmount: Number(tip.toFixed(2)),
+                    subtotal: Number(totalPrice.toFixed(2)),
+                    total: Number(grandTotal.toFixed(2)),
+                })),
+                tipAmount: Number(tip.toFixed(2)),
+            };
+
+            // 2. Registrar la orden en la base de datos
             const resOrder = await fetch("/api/process-payment", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    url: `http://localhost:3000?referenceCode=${referenceCode}&TX_VALUE=${grandTotal}&currency=${currency}&buyerEmail=${deliveryInfo.email}&authorizationCode=pendiente&transactionState=pendiente`,
+                    url: `${window.location.origin}?referenceCode=${referenceCode}&TX_VALUE=${grandTotal}&currency=${currency}&buyerEmail=${deliveryInfo.email}&authorizationCode=pendiente&transactionState=pendiente`,
                     items: orderDataForApi.cartItems
                 }),
             });
+
             if (!resOrder.ok) throw new Error("Error registrando la orden");
 
             // 3. Preparar el pago con PayU
@@ -332,6 +326,7 @@ function CheckoutContent() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(orderDataForApi),
             });
+
             if (!res.ok) throw new Error("Error preparando pago");
             const prepared = await res.json();
 
@@ -339,19 +334,18 @@ function CheckoutContent() {
                 throw new Error("Falta firma en la respuesta de pago");
             }
 
-            // Guardar en localStorage (opcional)
-            if (typeof window !== "undefined") {
-                const toStore = {
-                    paymentMethod: "payu",
-                    referenceCode,
-                    total: grandTotal,
-                    tax,
-                    tip,
-                    items: cartItems,
-                    shippingAddress: deliveryInfo
-                };
-                localStorage.setItem("orderDetails", JSON.stringify(toStore));
-            }
+            // Guardar en localStorage antes de redirigir
+            const toStore = {
+                paymentMethod: "payu",
+                referenceCode,
+                total: grandTotal,
+                tax,
+                tip,
+                items: cartItems,
+                shippingAddress: deliveryInfo
+            };
+            localStorage.setItem("orderDetails", JSON.stringify(toStore));
+            localStorage.setItem("lastPaymentMethod", "payu");
 
             // 4. Redirigir a PayU
             const form = document.createElement("form");
@@ -369,7 +363,8 @@ function CheckoutContent() {
 
         } catch (err: any) {
             console.error("PayU Payment Error:", err);
-            toast.error(err.message);
+            toast.error(err.message || "Error al procesar el pago");
+        } finally {
             setLoading(false);
         }
     };
