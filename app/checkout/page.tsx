@@ -104,14 +104,29 @@ function CheckoutContent() {
         }
     }, [isLoaded, isSignedIn, router]);
 
+    useEffect(() => {
+        console.log('USEEFFECT: isSignedIn:', isSignedIn);
+        console.log('USEEFFECT: user:', user);
+        if (isSignedIn && user) {
+            setDeliveryInfo(prev => ({
+                ...prev,
+                email: user.primaryEmailAddress?.emailAddress || prev.email,
+                firstname: user.firstName || prev.firstname,
+                lastname: user.lastName || prev.lastname
+            }));
+        }
+    }, [isSignedIn, user, fetchUserSaldo]);
+
+    useEffect(() => {
+        if (isSignedIn && user?.id) {
+            fetchUserSaldo(user.id, isSignedIn);
+        }
+    }, [isSignedIn, user, fetchUserSaldo]);
+
     if (!isLoaded) {
         console.log('NO está cargado Clerk todavía, mostrando loader');
         return <div>Cargando...</div>;
     }
-
-    // LOGS DE DEPURACIÓN
-    console.log('CHECKOUT: isSignedIn:', isSignedIn);
-    console.log('CHECKOUT: user:', user);
 
     const [paymentMethod, setPaymentMethod] = useState<"saldo" | "payu">("saldo");
     const [tipAmount, setTipAmount] = useState<string | null>(null);
@@ -125,7 +140,7 @@ function CheckoutContent() {
         address: '',
         apartment: '',
         city: '',
-        province: '', // Consider making this a dropdown if needed
+        province: '',
         postal: '',
         phone: '',
         saveInfo: false,
