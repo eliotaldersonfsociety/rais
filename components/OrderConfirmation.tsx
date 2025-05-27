@@ -459,7 +459,7 @@ export default function OrderConfirmation() {
               {loading ? 'Procesando...' : 'Ir a Dashboard'}
             </Button>
             <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg mt-2" asChild>
-              <Link href="/pagina">Seguir comprando</Link>
+              <Link href="/">Seguir comprando</Link>
             </Button>
           </div>
         </div>
