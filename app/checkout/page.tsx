@@ -314,7 +314,17 @@ function CheckoutContent() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     url: `${window.location.origin}?referenceCode=${referenceCode}&TX_VALUE=${grandTotal}&currency=${currency}&buyerEmail=${deliveryInfo.email}&authorizationCode=pendiente&transactionState=pendiente`,
-                    items: orderDataForApi.cartItems
+                    items: orderDataForApi.cartItems,
+                    // Agregar datos de envío
+                    address: deliveryInfo.address,
+                    house_apt: deliveryInfo.apartment,
+                    city: deliveryInfo.city,
+                    state: deliveryInfo.province,
+                    country: deliveryInfo.country,
+                    postal_code: deliveryInfo.postal,
+                    phone: deliveryInfo.phone,
+                    first_name: deliveryInfo.firstname,
+                    last_name: deliveryInfo.lastname
                 }),
             });
 
