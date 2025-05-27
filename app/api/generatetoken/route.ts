@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const signature = crypto.createHash('md5').update(signatureString).digest('hex');
 
     // 3) Guarda en BD tu JWT usando drizzle y el esquema correcto
-    await db.payu.insert(payuTokens).values({
+    await db.payus.insert(payuTokens).values({
       referenceCode,
       token,
       createdAt: new Date().toISOString(),
