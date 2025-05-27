@@ -63,10 +63,12 @@ export async function POST(req: NextRequest) {
 
     // 6. Verificar y actualizar datos de envío del usuario si están vacíos
     if (userId) {
-      const [user] = await db
+      const userResult = await db
         .select()
         .from(users)
         .where(eq(users.clerk_id, userId));
+
+      const user = userResult[0];
 
       if (user) {
         const envioFields = [
