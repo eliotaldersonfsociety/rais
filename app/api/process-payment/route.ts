@@ -1,9 +1,9 @@
 // app/api/process-payment/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db/index'; // Drizzle client
-import { orders, orderItems, users } from '@/lib/payu/schema'; // Asegúrate de importar la tabla users
+import { orders, orderItems, users } from '@/lib/payu/schema';
 import { getAuth } from '@clerk/nextjs/server';
-import { eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,24 +63,39 @@ export async function POST(req: NextRequest) {
 
     // 6. Verificar y actualizar datos de envío del usuario si están vacíos
     if (userId) {
-      const user = await db.query.users.findFirst({
-        where: eq(users.clerk_id, userId),
-      });
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerk_id, userId));
 
       if (user) {
-        const updates: Partial<typeof users.$inferInsert> = {};
+        const envioFields = [
+          ['name', 'firstname'],
+          ['lastname', 'lastname'],
+          ['email', 'email'],
+          ['phone', 'phone'],
+          ['direction', 'address'],
+          ['postalcode', 'postal'],
+        ] as const;
 
-        if (!user.name && deliveryInfo.firstname) updates.name = deliveryInfo.firstname;
-        if (!user.lastname && deliveryInfo.lastname) updates.lastname = deliveryInfo.lastname;
-        if (!user.email && deliveryInfo.email) updates.email = deliveryInfo.email;
-        if (!user.phone && deliveryInfo.phone) updates.phone = deliveryInfo.phone;
-        if (!user.direction && deliveryInfo.address) updates.direction = deliveryInfo.address;
-        if (!user.postalcode && deliveryInfo.postal) updates.postalcode = deliveryInfo.postal;
+        const envioUpdate: Record<string, any> = {};
 
-        if (Object.keys(updates).length > 0) {
+        for (const [dbField, deliveryField] of envioFields) {
+          const currentValue = user[dbField as keyof typeof user];
+          const newValue = deliveryInfo[deliveryField];
+
+          if (
+            (currentValue === undefined || currentValue === null || currentValue === "") &&
+            newValue !== undefined && newValue !== null && newValue !== ""
+          ) {
+            envioUpdate[dbField] = newValue;
+          }
+        }
+
+        if (Object.keys(envioUpdate).length > 0) {
           await db
             .update(users)
-            .set(updates)
+            .set(envioUpdate)
             .where(eq(users.clerk_id, userId));
         }
       }
