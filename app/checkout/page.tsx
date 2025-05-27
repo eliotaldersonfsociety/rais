@@ -110,23 +110,13 @@ function CheckoutContent() {
         marketingSms: false,
     });
 
-    // LOGS DE DEPURACIÓN EN EL RENDER
-    console.log('RENDER: isLoaded:', isLoaded);
-    console.log('RENDER: isSignedIn:', isSignedIn);
-    console.log('RENDER: user:', user);
-
+    // Consolidar todos los useEffect al inicio
     useEffect(() => {
-        console.log('USEEFFECT (protección): isLoaded:', isLoaded);
-        console.log('USEEFFECT (protección): isSignedIn:', isSignedIn);
         if (isLoaded && !isSignedIn) {
-            console.log('Redirigiendo a /sign-in desde useEffect');
             router.replace("/pagina");
+            return;
         }
-    }, [isLoaded, isSignedIn, router]);
 
-    useEffect(() => {
-        console.log('USEEFFECT: isSignedIn:', isSignedIn);
-        console.log('USEEFFECT: user:', user);
         if (isSignedIn && user) {
             setDeliveryInfo(prev => ({
                 ...prev,
@@ -135,13 +125,11 @@ function CheckoutContent() {
                 lastname: user.lastName || prev.lastname
             }));
         }
-    }, [isSignedIn, user]);
 
-    useEffect(() => {
         if (isSignedIn && user?.id) {
             fetchUserSaldo(user.id, isSignedIn);
         }
-    }, [isSignedIn, user, fetchUserSaldo]);
+    }, [isLoaded, isSignedIn, user, router, fetchUserSaldo]);
 
     // Calculations
     const totalPrice = cartItems.reduce((sum: number, item: typeof cartItems[0]) => sum + item.price * item.quantity, 0);
@@ -150,7 +138,6 @@ function CheckoutContent() {
     const grandTotal = totalPrice + tax + tip;
 
     if (!isLoaded) {
-        console.log('NO está cargado Clerk todavía, mostrando loader');
         return <div>Cargando...</div>;
     }
 
