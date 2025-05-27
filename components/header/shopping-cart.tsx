@@ -37,15 +37,17 @@ export default function ShoppingCart() {
   }, [cartItems, router, pathname, isCheckoutLoading, isMounted]);
 
   const handleCheckoutClick = async () => {
+    if (cartItems.length === 0) {
+      return;
+    }
+
     setIsCheckoutLoading(true);
     try {
+      // Pequeña pausa para permitir que el Sheet se cierre
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       if (!isSignedIn) {
         await router.push("/sign-in?redirect_url=/checkout");
-        return;
-      }
-      
-      // Asegurarse de que el carrito no esté vacío
-      if (cartItems.length === 0) {
         return;
       }
 
