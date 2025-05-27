@@ -112,43 +112,53 @@ function CheckoutContent() {
 
     // Consolidar todos los useEffect al inicio
     useEffect(() => {
-        // Verificar si hay un pago en proceso de PayU
-        const lastPaymentMethod = localStorage.getItem("lastPaymentMethod");
-        const orderDetails = localStorage.getItem("orderDetails");
+        const init = async () => {
+            // Verificar si hay un pago en proceso de PayU
+            const lastPaymentMethod = localStorage.getItem("lastPaymentMethod");
+            const orderDetails = localStorage.getItem("orderDetails");
 
-        // Si el usuario viene de PayU, limpiar el estado
-        if (lastPaymentMethod === "payu" && orderDetails) {
-            localStorage.removeItem("lastPaymentMethod");
-            localStorage.removeItem("orderDetails");
-            clearCart();
-            router.replace("/thankyou");
-            return;
-        }
-
-        // Esperar a que se cargue el estado de autenticación
-        if (!isLoaded) return;
-
-        // Si el usuario no está autenticado, redirigir
-        if (!isSignedIn) {
-            router.replace("/sign-in?redirect_url=/checkout");
-            return;
-        }
-
-        // Si el usuario está autenticado, actualizar la información
-        if (user) {
-            setDeliveryInfo(prev => ({
-                ...prev,
-                email: user.primaryEmailAddress?.emailAddress || prev.email,
-                firstname: user.firstName || prev.firstname,
-                lastname: user.lastName || prev.lastname
-            }));
-            
-            // Actualizar saldo solo si tenemos ID de usuario
-            if (user.id) {
-                fetchUserSaldo(user.id, isSignedIn);
+            // Si el usuario viene de PayU, limpiar el estado
+            if (lastPaymentMethod === "payu" && orderDetails) {
+                localStorage.removeItem("lastPaymentMethod");
+                localStorage.removeItem("orderDetails");
+                clearCart();
+                await router.replace("/thankyou");
+                return;
             }
-        }
-    }, [isLoaded, isSignedIn, user, router, fetchUserSaldo, clearCart]);
+
+            // Esperar a que se cargue el estado de autenticación
+            if (!isLoaded) return;
+
+            // Si el usuario no está autenticado, redirigir
+            if (!isSignedIn) {
+                await router.replace("/sign-in?redirect_url=/checkout");
+                return;
+            }
+
+            // Si el carrito está vacío, redirigir al inicio
+            if (cartItems.length === 0) {
+                await router.replace("/");
+                return;
+            }
+
+            // Si el usuario está autenticado, actualizar la información
+            if (user) {
+                setDeliveryInfo(prev => ({
+                    ...prev,
+                    email: user.primaryEmailAddress?.emailAddress || prev.email,
+                    firstname: user.firstName || prev.firstname,
+                    lastname: user.lastName || prev.lastname
+                }));
+                
+                // Actualizar saldo solo si tenemos ID de usuario
+                if (user.id) {
+                    await fetchUserSaldo(user.id, isSignedIn);
+                }
+            }
+        };
+
+        init();
+    }, [isLoaded, isSignedIn, user, router, fetchUserSaldo, clearCart, cartItems]);
 
     // Calculations
     const totalPrice = cartItems.reduce((sum: number, item: typeof cartItems[0]) => sum + item.price * item.quantity, 0);
