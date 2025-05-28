@@ -24,7 +24,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Tienda Texas",
-  icons: {/favicon.ico},
+  icons: {
+    icon: "/favicon.ico",
+  },
   description: "Ecommerce de productos al mayor y detal.",
 };
 
