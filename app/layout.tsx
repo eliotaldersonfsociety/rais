@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Texas Tienda",
+  title: "Tienda Texas",
   description: "Ecommerce de productos al mayor y detal.",
 };
 
